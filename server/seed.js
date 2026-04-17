@@ -39,12 +39,12 @@ const MOCK_COURSES = [
 const INITIAL_SITE_CONTENT = {
   key: 'main',
   hero: {
-    title: "Master Shorthand Like a Pro",
-    subtitle: "Practice court reporting dictations, improve your stenography speed, and track your WPM performance with our real exam simulation engine."
+    title: "Master Shorthand from basic to advance.",
+    subtitle: "Speed Script Academy is a professional training platform focused on developing shorthand proficiency with speed, accuracy and consistency. We deliver structured, exam-oriented courses with practical dictation and performance-based learning. Our mission is to equip learners with the skills and confidence required to excel in stenography careers and competitive exams."
   },
   features: [
-    { icon: "Activity", title: "Real Dictation", desc: "Train with real medical and legal audio files synchronized in real-time." },
-    { icon: "Zap", title: "Smart Evaluation", desc: "Instant grading of Your WPM, error rates, and percentage accuracy." },
+    { icon: "Activity", title: "Real Dictation", desc: "real exam level dictations designed to match competitive stenography skill test standards." },
+    { icon: "Zap", title: "Smart Evaluation", desc: "Instant grading of Your WPM, error rates, and accuracy percentage." },
     { icon: "ShieldCheck", title: "Cheat-Proof", desc: "Built-in anti-cheat prevents copy-pasting and monitors tab switching." },
     { icon: "Server", title: "Progressive Learning", desc: "Structured lessons from 60 WPM to 120 WPM to build your confidence." }
   ],

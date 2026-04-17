@@ -21,7 +21,7 @@ export default function Navbar() {
           SSA
         </div>
         <span style={{ fontSize: '1.25rem', fontFamily: 'var(--font-heading)', fontWeight: 700, letterSpacing: '0.5px' }}>
-          Speed Script
+          Speed Script Academy
         </span>
       </Link>
 
