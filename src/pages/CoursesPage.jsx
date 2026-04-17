@@ -9,17 +9,24 @@ export default function CoursesPage() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = useStore(state => state.user);
+  const updateUser = useStore(state => state.updateUser);
   const navigate = useNavigate();
 
   useEffect(() => {
     async function load() {
       try {
-        const [c, r] = await Promise.all([
+        const [c, r, freshUser] = await Promise.all([
           db.getCourses(),
-          db.getPendingRequests()
+          db.getPendingRequests(),
+          db.getMe() // Always fetch fresh user access data
         ]);
         setCourses(c);
         setPendingRequests(r);
+
+        // Sync local session with database reality
+        if (freshUser) {
+           updateUser({ ...user, ...freshUser });
+        }
       } catch (err) {
         console.error("Failed to load courses:", err);
       } finally {

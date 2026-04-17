@@ -39,6 +39,11 @@ export const db = {
     localStorage.removeItem('ssa_user');
   },
 
+  async getMe() {
+    const res = await api.get('/auth/me', { headers: getAuthHeader() });
+    return res.data;
+  },
+
   // --- COURSES ---
   async getCourses() {
     const res = await api.get('/courses');

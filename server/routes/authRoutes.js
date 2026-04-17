@@ -157,4 +157,23 @@ router.put('/:id/reset-password', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   GET /api/auth/me (Logged in User Only)
+router.get('/me', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Return fresh data minus password
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      purchasedCourses: user.purchasedCourses || []
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
