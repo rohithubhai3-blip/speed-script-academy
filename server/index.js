@@ -30,6 +30,7 @@ const connectDB = async () => {
   const conn = await mongoose.connect(MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    family: 4, // Force IPv4 to avoid ENOTFOUND issues on some networks
   });
   
   cachedDb = conn;
