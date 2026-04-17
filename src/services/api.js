@@ -174,6 +174,11 @@ export const db = {
     return res.data;
   },
 
+  async resetUserPassword(userId, password) {
+    const res = await api.put(`/auth/${userId}/reset-password`, { password }, { headers: getAuthHeader() });
+    return res.data;
+  },
+
   async getPromos() {
     // Basic placeholder since we don't have a Promo model yet
     return [];

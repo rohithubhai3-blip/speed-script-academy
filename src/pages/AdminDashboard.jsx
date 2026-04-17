@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
@@ -112,6 +112,17 @@ export default function AdminDashboard() {
     setUserAccessForm(prev => 
       prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
     );
+  };
+
+  const handleResetPassword = async (user) => {
+    const newPassword = window.prompt(`Enter new password for ${user.name}:`);
+    if (!newPassword || newPassword.length < 6) {
+       return alert("Password must be at least 6 characters.");
+    }
+    try {
+       await db.resetUserPassword(user._id || user.id, newPassword);
+       alert("Password reset successfully! 🔐");
+    } catch (err) { alert(err.message); }
   };
 
   const handleSaveCourse = async (e) => {
@@ -391,6 +402,7 @@ export default function AdminDashboard() {
                       </td>
                       <td style={{ padding: '16px 8px', textAlign: 'right' }}>
                          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => handleResetPassword(u)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer' }} title="Reset Password"><Key size={18} /></button>
                             <button onClick={() => openAccessModal(u)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer' }} title="Manage Access"><ShieldCheck size={18} /></button>
                             <button onClick={() => handleDeleteUser(u._id || u.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete User"><Trash2 size={18} /></button>
                          </div>

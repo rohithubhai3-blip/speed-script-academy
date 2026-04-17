@@ -141,4 +141,20 @@ router.put('/:id/access', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   PUT /api/auth/:id/reset-password (Admin Only)
+router.put('/:id/reset-password', protect, adminOnly, async (req, res) => {
+  const { password } = req.body;
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.password = password; // The pre-save hook in User.js will hash this
+    await user.save();
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
