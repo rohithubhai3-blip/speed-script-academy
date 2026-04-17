@@ -45,8 +45,14 @@ export default function TestPage() {
       // Initialize time limit
       let secs = 300; // default 5m
       if (data.timeLimit) {
-        const [h, m, s] = data.timeLimit.split(':').map(Number);
-        secs = h * 3600 + m * 60 + s;
+        const parts = data.timeLimit.split(':').map(Number);
+        if (parts.length === 3) {
+           secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
+        } else if (parts.length === 2) {
+           secs = parts[0] * 60 + parts[1];
+        } else if (parts.length === 1) {
+           secs = parts[0];
+        }
       } else if (data.timeMinutes) {
         secs = data.timeMinutes * 60;
       }
@@ -81,7 +87,7 @@ export default function TestPage() {
         setCountdown(prev => prev - 1);
       }, 1000);
     } else if (status === "starting" && countdown === 0) {
-      startTest();
+      handleStartTest();
     }
     return () => clearInterval(interval);
   }, [status, countdown]);
