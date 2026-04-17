@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Dashboard - Speed Script Academy</title>
+
+<link rel="stylesheet" href="../css/main.css">
+
+<script src="../js/auth.js"></script>
+<script>
+checkAuth();
+</script>
+
+<style>
+.container {
+    padding: 40px;
+}
+.card {
+    background: #1e293b;
+    padding: 20px;
+    margin-top: 20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<nav class="navbar">
+<div class="logo">Dashboard</div>
+
+<div class="nav-links">
+<a href="../index.html">Home</a>
+<a href="test.html">Test</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+</nav>
+
+<div class="container">
+
+<h2>Your Performance</h2>
+
+<div class="card">Tests Attempted: 0</div>
+<div class="card">Average Accuracy: 0%</div>
+<div class="card">Best Score: 0%</div>
+
+</div>
+
+</body>
+</html>

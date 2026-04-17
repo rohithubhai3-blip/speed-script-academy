@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Admin Panel</title>
+
+<link rel="stylesheet" href="../css/main.css">
+
+<script src="../js/auth.js"></script>
+<script>
+checkAuth();
+checkAdmin();
+window.onload = function() {
+    loadAdminUsers();
+};
+</script>
+
+<style>
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 40px;
+}
+
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+}
+</style>
+
+</head>
+
+<body>
+
+<nav class="navbar">
+<div class="logo">Admin Panel</div>
+
+<div class="nav-links">
+<a href="../index.html">Home</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+</nav>
+
+<div class="container">
+
+<h2>Create Test</h2>
+
+<div class="card">
+
+<label>Passage</label>
+<textarea id="passageInput"></textarea>
+
+<label>Time (1–60 min)</label>
+<input type="number" id="timeInput" min="1" max="60" value="5">
+
+<label>Audio File Name</label>
+<input type="text" id="audioInput" placeholder="sample.mp3">
+
+<label>Allowed Error %</label>
+<input type="number" id="errorInput" value="5">
+
+<label>Capitalization Rule</label>
+<select id="capsRule">
+<option value="ignore">Ignore</option>
+<option value="half">Half Mistake</option>
+<option value="full">Full Mistake</option>
+</select>
+
+<label>Punctuation Rule</label>
+<select id="punctRule">
+<option value="ignore">Ignore</option>
+<option value="half">Half Mistake</option>
+<option value="full">Full Mistake</option>
+</select>
+
+<label>Similar Word Tolerance</label>
+<select id="similarRule">
+<option value="on">Allow (Half Mistake)</option>
+<option value="off">Strict (Full Mistake)</option>
+</select>
+
+<br><br>
+
+<button class="btn primary" onclick="saveTest()">Save Test</button>
+
+</div>
+
+<h2 style="margin-top: 40px;">Registered Users</h2>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead style="background: rgba(0,0,0,0.2);">
+            <tr>
+                <th style="padding: 15px 10px;">ID</th>
+                <th style="padding: 15px 10px;">Name</th>
+                <th style="padding: 15px 10px;">Username</th>
+                <th style="padding: 15px 10px;">Registered On</th>
+                <th style="padding: 15px 10px;">Action</th>
+            </tr>
+        </thead>
+        <tbody id="usersTableBody">
+            <!-- Users will be injected here via JS -->
+        </tbody>
+    </table>
+</div>
+
+</div>
+
+<script>
+
+function saveTest(){
+
+    let test = {
+
+        passage: document.getElementById("passageInput").value.trim(),
+
+        time: parseInt(document.getElementById("timeInput").value),
+
+        audio: "/assets/audio/" + document.getElementById("audioInput").value.trim(),
+
+        settings: {
+            allowedError: parseFloat(document.getElementById("errorInput").value),
+            capitalization: document.getElementById("capsRule").value,
+            punctuation: document.getElementById("punctRule").value,
+            similarity: document.getElementById("similarRule").value
+        }
+    };
+
+    localStorage.setItem("activeTest", JSON.stringify(test));
+
+    alert("✅ Test saved");
+}
+
+</script>
+
+</body>
+</html>

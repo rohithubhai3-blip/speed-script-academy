@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Speed Script Academy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --bg-color: #0b0f19;
+            --surface: rgba(30, 41, 59, 0.7);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated background shapes */
+        .shape {
+            position: absolute;
+            filter: blur(60px);
+            z-index: -1;
+            opacity: 0.5;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: #2563eb;
+            top: -50px;
+            left: -50px;
+            border-radius: 50%;
+        }
+
+        .shape-2 {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -150px;
+            right: -100px;
+            border-radius: 50%;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) scale(1); }
+            100% { transform: translateY(-30px) scale(1.1); }
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 45px 40px;
+            background: var(--surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateY(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .auth-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.1) inset;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .auth-header h2 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-header p {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 22px;
+            position: relative;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px 18px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(148, 163, 184, 0.5);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            margin-top: 15px;
+            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 20px -10px rgba(59, 130, 246, 0.6);
+            letter-spacing: 0.5px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px -10px rgba(59, 130, 246, 0.8);
+            background: linear-gradient(135deg, #4f46e5, var(--primary));
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .auth-footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .auth-footer a:hover {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: var(--surface);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .back-home:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <a href="../index.html" class="back-home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Back 
+    </a>
+
+    <!-- Decorative background elements -->
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+
+    <div class="auth-container">
+        <div class="auth-header">
+            <h2>Welcome Back</h2>
+            <p>Login to continue your tracking</p>
+        </div>
+
+        <div class="input-group">
+            <label for="username">USERNAME</label>
+            <input type="text" id="username" placeholder="Enter your username">
+        </div>
+
+        <div class="input-group">
+            <label for="password">PASSWORD</label>
+            <input type="password" id="password" placeholder="Enter your password">
+        </div>
+
+        <button class="btn-submit" onclick="login()">Login to Account</button>
+
+        <div class="auth-footer">
+            Don't have an account? <a href="register.html">Create one</a>
+        </div>
+    </div>
+
+    <script src="../js/auth.js"></script>
+</body>
+</html>

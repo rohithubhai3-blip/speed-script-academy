@@ -1,0 +1,88 @@
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: #0b0f19;
+    color: white;
+}
+
+/* NAVBAR */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 40px;
+    background: rgba(0,0,0,0.8);
+}
+
+.logo {
+    font-weight: 700;
+}
+
+.nav-links a {
+    margin-left: 20px;
+    color: white;
+    text-decoration: none;
+}
+
+/* HERO */
+.hero {
+    height: 85vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 60px;
+    background: linear-gradient(to top, #0b0f19, transparent);
+}
+
+.hero h1 {
+    font-size: 48px;
+}
+
+.hero p {
+    max-width: 500px;
+}
+
+/* BUTTONS */
+.btn {
+    padding: 12px 25px;
+    border: none;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.primary {
+    background: #2563eb;
+    color: white;
+}
+
+.secondary {
+    background: #444;
+    color: white;
+}
+
+/* SECTIONS */
+.section {
+    padding: 40px 60px;
+}
+
+.row {
+    display: flex;
+    gap: 15px;
+}
+
+/* CARDS */
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.card:hover {
+    background: #2563eb;
+}
+
+/* FOOTER */
+.footer {
+    text-align: center;
+    padding: 20px;
+}

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shorthand Test</title>
+
+<link rel="stylesheet" href="../css/main.css">
+
+<script src="../js/auth.js"></script>
+<script>
+checkAuth();
+</script>
+
+<style>
+body {
+    background: linear-gradient(135deg, #020617, #0f172a);
+    color:white;
+    margin:0;
+    font-family: Arial;
+}
+
+/* NAVBAR */
+nav {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 40px;
+    background:#020617;
+    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+}
+
+nav a {
+    color:#cbd5f5;
+    margin:0 10px;
+    text-decoration:none;
+    font-weight:500;
+    transition:0.3s;
+}
+
+nav a:hover {
+    color:#38bdf8;
+}
+
+/* CONTAINER */
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 40px;
+}
+
+/* TEXTAREA */
+textarea {
+    width:100%;
+    height:220px;
+    padding:15px;
+    border-radius:10px;
+    background:#020617;
+    color:white;
+    border:1px solid #1e293b;
+}
+
+/* TIMER */
+#timer {
+    font-size:24px;
+    color:#38bdf8;
+    margin-bottom:10px;
+}
+
+/* 🔥 PREMIUM BUTTON */
+.btn {
+    padding:12px 25px;
+    border:none;
+    border-radius:8px;
+    background:linear-gradient(135deg,#2563eb,#38bdf8);
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.btn:hover {
+    transform:scale(1.05);
+    box-shadow:0 0 15px rgba(56,189,248,0.6);
+}
+
+/* MODAL */
+#resultModal {
+    display:none;
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.8);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-box {
+    background:#0f172a;
+    padding:30px;
+    border-radius:10px;
+    width:90%;
+    max-width:1100px;
+    max-height:90vh;
+    overflow:auto;
+}
+</style>
+
+</head>
+
+<body>
+
+<nav>
+<div><strong>Speed Script</strong></div>
+
+<div>
+<a href="../index.html">Home</a>
+<a href="dashboard.html">Dashboard</a>
+<a href="#" onclick="logout()">Logout</a>
+</div>
+</nav>
+
+<div class="container">
+
+<h2>Shorthand Test</h2>
+
+<div id="timer"></div>
+
+<audio id="audioPlayer" controls></audio>
+
+<textarea id="inputArea" placeholder="Start typing here..."></textarea>
+
+<br><br>
+
+<button class="btn" onclick="submitTest()">Submit Test</button>
+
+</div>
+
+<!-- RESULT -->
+<div id="resultModal">
+<div class="modal-box">
+<h2>Result</h2>
+<div id="resultContent"></div>
+<br>
+<button class="btn" onclick="closeResult()">Close</button>
+</div>
+</div>
+
+<script src="../js/testEngine.js"></script>
+
+<script>
+let activeTest = JSON.parse(localStorage.getItem("activeTest"));
+
+document.getElementById("timer").innerText =
+    activeTest.time + " min";
+
+if(activeTest.audio){
+    document.getElementById("audioPlayer").src = activeTest.audio;
+}
+
+startTest();
+</script>
+
+</body>
+</html>
