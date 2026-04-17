@@ -49,7 +49,10 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
   const oRaw = getWords(originalText, r.punctRule);
   const tRaw = getWords(typedText, r.punctRule);
 
-  let omissions = 0, additions = 0, substitutions = 0, capitalizationErrors = 0, punctuationErrors = 0, spellingErrors = 0;
+  let i = 0, j = 0;
+  let full = 0, half = 0;
+  
+  let resultHtmlArray = [];
 
   while (i < oRaw.length && j < tRaw.length) {
     let owR = oRaw[i];
@@ -78,20 +81,14 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
 
       if (isCaseDiff) {
         if (r.capRule !== "Ignore") {
-          const weight = (r.capRule === "Full Mistake" ? 1 : 0.5);
-          full += (weight === 1 ? 1 : 0);
-          half += (weight === 0.5 ? 1 : 0);
-          capitalizationErrors++;
+          full += (r.capRule === "Full Mistake" ? 1 : 0.5);
           mistakeType = "capitalization";
         }
       }
 
       if (isPunctDiff && mistakeType === "correct") { // Capitalization takes priority for tagging if both exist
         if (r.punctRule !== "Ignore") {
-          const weight = (r.punctRule === "Full Mistake" ? 1 : 0.5);
-          full += (weight === 1 ? 1 : 0);
-          half += (weight === 0.5 ? 1 : 0);
-          punctuationErrors++;
+          full += (r.punctRule === "Full Mistake" ? 1 : 0.5);
           mistakeType = "punctuation";
         }
       }
@@ -104,9 +101,7 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     // 3. SPELLING (1 char diff)
     if (isSpelling(owLow, twLow)) {
       let weight = r.similarWordRule === "Strict" ? 1 : 0.5;
-      full += (weight === 1 ? 1 : 0);
-      half += (weight === 0.5 ? 1 : 0);
-      spellingErrors++;
+      full += weight;
       resultHtmlArray.push({ word: twR, original: owR, type: "spelling" });
       i++; j++;
       continue;
@@ -115,7 +110,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     // 4. MISSING WORD (Omission)
     if (oRaw[i + 1] && (oRaw[i + 1].toLowerCase() === twLow || oRaw[i + 1].toLowerCase().replace(/[.,:;!?]/g, "") === twClean)) {
       full++;
-      omissions++;
       resultHtmlArray.push({ word: owR, type: "missing" });
       i++;
       continue;
@@ -124,7 +118,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     // 5. EXTRA WORD (Addition)
     if (tRaw[j + 1] && (oRaw[i].toLowerCase() === tRaw[j + 1].toLowerCase() || owClean === tRaw[j+1].toLowerCase().replace(/[.,:;!?]/g, ""))) {
       full++;
-      additions++;
       resultHtmlArray.push({ word: twR, type: "extra" });
       j++;
       continue;
@@ -132,7 +125,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
 
     // 6. COMPLETELY DIFFERENT WORD (Substitution)
     full++;
-    substitutions++;
     resultHtmlArray.push({ word: twR, original: owR, type: "substitution" });
     i++; j++;
   }
@@ -140,7 +132,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
   // remaining original (missed)
   while (i < oRaw.length) {
     full++;
-    omissions++;
     resultHtmlArray.push({ word: oRaw[i], type: "missing" });
     i++;
   }
@@ -148,7 +139,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
   // remaining typed (extra)
   while (j < tRaw.length) {
     full++;
-    additions++;
     resultHtmlArray.push({ word: tRaw[j], type: "extra" });
     j++;
   }
@@ -174,12 +164,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     fullMistakes: full,
     halfMistakes: half,
     totalMistakes,
-    omissions,
-    additions,
-    substitutions,
-    capitalizationErrors,
-    punctuationErrors,
-    spellingErrors,
     errorPercent: errorRate.toFixed(2),
     accuracy: accuracy.toFixed(2),
     wpm: netWpm,
