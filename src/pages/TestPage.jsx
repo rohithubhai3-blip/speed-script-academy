@@ -135,6 +135,7 @@ export default function TestPage() {
   };
 
   const formatTime = (secs) => {
+    if (secs === null || isNaN(secs)) return "00:00";
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     const s = secs % 60;
@@ -320,6 +321,13 @@ export default function TestPage() {
 
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         
+        {/* HIDDEN AUDIO ELEMENT */}
+        <audio 
+           ref={mediaRef} 
+           src={lesson.mediaUrl || lesson.audioUrl} 
+           onEnded={handleMediaEnd} 
+           style={{ display: 'none' }}
+        />
 
         <div style={{ marginBottom: '24px', position: 'relative' }}>
           {status === "running" && (
@@ -331,98 +339,47 @@ export default function TestPage() {
             />
           )}
 
-          <div className="premium-player-container" style={{
-            background: 'var(--bg-surface-elevated)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-color)',
-            padding: '24px',
-            boxShadow: 'var(--shadow-drop)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            {lesson.mediaType === 'video' ? (
-              <video 
-                ref={mediaRef} 
-                src={lesson.mediaUrl || lesson.audioUrl} 
-                onEnded={handleMediaEnd} 
-                controls={status === 'finished'}
-                style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
-              />
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                <div style={{
-                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
-                  padding: '16px',
-                  borderRadius: '12px',
-                  color: 'white',
-                  boxShadow: '0 8px 20px rgba(14, 165, 233, 0.3)'
-                }}>
-                  <Music size={32} />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Dictation Audio</span>
-                    {status === "running" && <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>Playing at {targetWpm} WPM</span>}
+          {/* SPEED SELECTOR - REMAINING VISIBLE BEFORE START */}
+          {status === "ready" && (
+             <div style={{
+               marginBottom: '24px',
+               padding: '20px',
+               background: 'var(--bg-surface-elevated)',
+               borderRadius: '16px',
+               border: '1px solid var(--border-color)',
+               boxShadow: 'var(--shadow-drop)'
+             }}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Settings size={20} style={{ color: 'var(--primary)' }} />
+                    <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Dictation Speed</span>
                   </div>
-                  <audio 
-                    ref={mediaRef} 
-                    src={lesson.mediaUrl || lesson.audioUrl} 
-                    onEnded={handleMediaEnd} 
-                    controls={true} 
-                    style={{ width: '100%', height: '36px', filter: 'invert(0.1)' }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* SPEED CONTROL - NOW INTEGRATED INTO PLAYER */}
-            {status === "ready" && (
-              <div style={{
-                marginTop: '12px',
-                padding: '16px',
-                background: 'var(--bg-base)',
-                borderRadius: '12px',
-                border: '1px dotted var(--border-color)'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                     <Settings size={18} className="text-primary" />
-                     <span style={{ fontWeight: 'bold' }}>Select Your Speed</span>
-                   </div>
-                   <div style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                     {targetWpm} WPM
-                   </div>
-                </div>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Slow</span>
-                  <input 
-                    type="range" 
-                    min="40" 
-                    max="140" 
-                    step="5" 
-                    value={targetWpm} 
-                    onChange={(e) => setTargetWpm(parseInt(e.target.value))}
-                    style={{ flex: 1, accentColor: 'var(--primary)', height: '8px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Fast</span>
-                </div>
-              </div>
-            )}
-          </div>
+                  <div style={{ background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '20px', fontSize: '1rem', fontWeight: 'bold' }}>
+                    {targetWpm} WPM
+                  </div>
+               </div>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Slow</span>
+                 <input 
+                   type="range" 
+                   min="40" 
+                   max="140" 
+                   step="5" 
+                   value={targetWpm} 
+                   onChange={(e) => setTargetWpm(parseInt(e.target.value))}
+                   style={{ flex: 1, accentColor: 'var(--primary)', height: '10px', cursor: 'pointer' }}
+                 />
+                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fast</span>
+               </div>
+               <p style={{ marginTop: '16px', fontSize: '0.9rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                 <PlayCircle size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
+                 The timer and audio will start <strong>automatically</strong> as soon as you type the first character.
+               </p>
+             </div>
+          )}
         </div>
-        
-        {status === "ready" && (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <p style={{ marginBottom: '24px', color: 'var(--text-secondary)' }}>The test will begin and the dictation will autoplay at <strong>{targetWpm} WPM</strong> once you click start.</p>
-            <button className="btn btn-primary" onClick={handleStart} style={{ padding: '16px 40px', fontSize: '1.2rem', borderRadius: 'var(--radius-full)' }}>
-              <PlayCircle size={24} />
-              Start Challenge
-            </button>
-          </div>
-        )}
 
-        {status === "running" && (
+        {(status === "running" || status === "ready") && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
             {/* Warning Popup */}
             {showLockWarning && (
@@ -454,20 +411,27 @@ export default function TestPage() {
                   Speed: <strong>{targetWpm} WPM</strong>
                 </div>
               </div>
-              <button className="btn btn-outline" onClick={handleSubmit} style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: '8px 16px' }}>
-                Force Submit
-              </button>
+              {status === "running" && (
+                <button className="btn btn-outline" onClick={handleSubmit} style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: '8px 16px' }}>
+                  Force Submit
+                </button>
+              )}
             </div>
             <textarea 
               ref={textAreaRef}
               value={typedText}
-              onChange={(e) => setTypedText(e.target.value)}
+              onChange={(e) => {
+                 setTypedText(e.target.value);
+                 if (status === "ready" && e.target.value.length > 0) {
+                    startTest();
+                 }
+              }}
               onKeyDown={handleKeyDown}
               onPaste={handlePasteDisabled}
               onContextMenu={(e) => e.preventDefault()}
               className="input-field"
-              placeholder="Type exactly what you hear..."
-              style={{ minHeight: '300px', resize: 'vertical', fontSize: '1.1rem', lineHeight: 1.6 }}
+              placeholder={status === "ready" ? "Start typing here to begin the dictation and timer..." : "Type exactly what you hear..."}
+              style={{ minHeight: '300px', resize: 'vertical', fontSize: '1.1rem', lineHeight: 1.6, border: status === 'ready' ? '2px dashed var(--primary)' : '1px solid var(--border-color)' }}
               autoComplete="off"
               spellCheck="false"
             />
