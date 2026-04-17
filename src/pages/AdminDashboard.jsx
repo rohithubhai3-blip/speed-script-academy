@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '../data/db';
+import api from '../services/api';
 import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -181,11 +182,7 @@ export default function AdminDashboard() {
       });
       loadData();
     } catch (err) { 
-      if (err.name === 'QuotaExceededError') {
-         alert("Storage Limit Exceeded! The video/audio file is too large for Local Storage. Please use a public URL link instead until Firebase is connected.");
-      } else {
-         alert(err.message); 
-      }
+      alert(err.message); 
     }
   };
 
