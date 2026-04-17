@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
