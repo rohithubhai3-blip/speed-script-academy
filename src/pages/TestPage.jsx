@@ -17,7 +17,7 @@ export default function TestPage() {
   const [result, setResult] = useState(null);
   const [warnings, setWarnings] = useState(0);
   const [startTime, setStartTime] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(null); // in seconds
+  const [timeLeft, setTimeLeft] = useState(300); // Default to 300s (5m) instead of null
   const [targetWpm, setTargetWpm] = useState(80);
   const [baseWpm, setBaseWpm] = useState(80);
   const [lastLockedIndex, setLastLockedIndex] = useState(0);
@@ -42,20 +42,27 @@ export default function TestPage() {
       if (!data) return navigate('/courses');
       setLesson(data);
       
-      // Initialize time limit
-      let secs = 300; // default 5m
-      if (data.timeLimit) {
-        const parts = data.timeLimit.split(':').map(Number);
-        if (parts.length === 3) {
-           secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
-        } else if (parts.length === 2) {
-           secs = parts[0] * 60 + parts[1];
-        } else if (parts.length === 1) {
-           secs = parts[0];
+      // Robust time limit parser
+      let secs = 300;
+      try {
+        if (data.timeLimit && typeof data.timeLimit === 'string') {
+          const parts = data.timeLimit.split(':').map(val => parseInt(val) || 0);
+          if (parts.length === 3) {
+            secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
+          } else if (parts.length === 2) {
+            secs = parts[0] * 60 + parts[1];
+          } else if (parts.length === 1) {
+            secs = parts[0] * 60; // Assume as minutes if single number string
+          }
+        } else if (data.timeMinutes) {
+          secs = parseInt(data.timeMinutes) * 60;
         }
-      } else if (data.timeMinutes) {
-        secs = data.timeMinutes * 60;
+      } catch (e) {
+        console.warn("Time parsing error, using default 5m", e);
+        secs = 300;
       }
+
+      if (!secs || isNaN(secs) || secs < 0) secs = 300;
       setTimeLeft(secs);
       
       // Initialize WPM
