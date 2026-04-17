@@ -367,28 +367,53 @@ export default function TestPage() {
                 />
               </div>
 
-              {/* SPEED SELECTOR */}
+              {/* SPEED SELECTOR - DROPDOWN UPGRADE */}
               <div style={{
                 padding: '24px',
                 background: 'var(--bg-surface-elevated)',
                 borderRadius: '16px',
-                border: '1px solid var(--border-color)'
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '20px'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <span style={{ fontWeight: 'bold' }}>Set Dictation Speed (WPM)</span>
-                  <div style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontWeight: 'bold' }}>
-                    {targetWpm} WPM
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Settings size={20} style={{ color: 'var(--primary)' }} />
+                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Select Dictation Speed</span>
+                </div>
+
+                <div style={{ position: 'relative', width: '200px' }}>
+                  <select 
+                    value={targetWpm} 
+                    onChange={(e) => setTargetWpm(parseInt(e.target.value))}
+                    className="input-field"
+                    style={{ 
+                      width: '100%', 
+                      padding: '12px 20px', 
+                      borderRadius: '12px', 
+                      appearance: 'none', 
+                      cursor: 'pointer',
+                      fontWeight: 'bold',
+                      color: 'var(--primary)',
+                      border: '2px solid var(--primary)',
+                      background: 'rgba(56, 189, 248, 0.05)'
+                    }}
+                  >
+                    {Array.from({ length: (160 - 40) / 5 + 1 }, (_, i) => 40 + i * 5).map(speed => (
+                      <option key={speed} value={speed}>{speed} WPM</option>
+                    ))}
+                  </select>
+                  <div style={{
+                    position: 'absolute',
+                    right: '15px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    pointerEvents: 'none'
+                  }}>
+                    <ArrowRight size={18} style={{ transform: 'rotate(90deg)', color: 'var(--primary)' }} />
                   </div>
                 </div>
-                <input 
-                  type="range" 
-                  min="40" 
-                  max="140" 
-                  step="5" 
-                  value={targetWpm} 
-                  onChange={(e) => setTargetWpm(parseInt(e.target.value))}
-                  style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                />
               </div>
 
               <div style={{ textAlign: 'center', padding: '20px' }}>
