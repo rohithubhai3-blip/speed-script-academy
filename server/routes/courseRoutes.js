@@ -14,30 +14,40 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/courses/lesson/:courseId/:levelId/:lessonId
 router.get('/lesson/:courseId/:levelId/:lessonId', protect, async (req, res) => {
   const { courseId, levelId, lessonId } = req.params;
   
   try {
+    // We use .findOne({ id: courseId }) because we use custom slug IDs like 'course-demo'
     const course = await CourseModel.findOne({ id: courseId });
-    if (!course) return res.status(404).json({ message: 'Course not found' });
+    if (!course) {
+      console.warn(`[COURSE_NOT_FOUND] courseId: ${courseId}`);
+      return res.status(404).json({ message: `Course "${courseId}" not found` });
+    }
 
     // Check if user has purchased this course OR if it's a demo
-    const isPurchased = req.user.purchasedCourses.includes(courseId);
+    const isPurchased = req.user.purchasedCourses?.includes(courseId);
     const isDemo = course.title.toLowerCase().includes('demo');
 
     if (!isPurchased && !isDemo && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Course not purchased' });
+      return res.status(403).json({ message: 'Course not purchased. Please check out first.' });
     }
 
     const level = course.levels.find(l => l.id === levelId);
-    if (!level) return res.status(404).json({ message: 'Level not found' });
+    if (!level) {
+      console.warn(`[LEVEL_NOT_FOUND] course: ${courseId}, level: ${levelId}`);
+      return res.status(404).json({ message: `Level "${levelId}" not found in this course` });
+    }
 
     const lesson = level.lessons.find(ls => ls.id === lessonId);
-    if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
+    if (!lesson) {
+      console.warn(`[LESSON_NOT_FOUND] course: ${courseId}, level: ${levelId}, lesson: ${lessonId}`);
+      return res.status(404).json({ message: `Lesson "${lessonId}" not found in this level` });
+    }
 
     res.json(lesson);
   } catch (error) {
+    console.error(`[GET_LESSON_ERROR]`, error);
     res.status(500).json({ message: error.message });
   }
 });

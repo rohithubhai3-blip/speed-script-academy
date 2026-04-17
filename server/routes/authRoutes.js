@@ -16,16 +16,27 @@ router.post('/register', async (req, res) => {
   const { name, email, password, secretKey } = req.body;
 
   try {
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Please provide name, email, and password" });
+    }
+
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
     // Admin Role check based on Secret Key
     let role = 'user';
-    if (secretKey === process.env.ADMIN_SECRET_KEY || secretKey === 'SSA_ADMIN_2024') {
+    if (secretKey === process.env.ADMIN_SECRET_KEY || (secretKey && secretKey === 'SSA_ADMIN_2024')) {
       role = 'admin';
     }
 
-    const user = await User.create({ name, email, password, role });
+    console.log(`[AUTH] Creating user: ${email}, Role: ${role}`);
+    const user = await User.create({ 
+      name, 
+      email, 
+      password, 
+      role,
+      purchasedCourses: [] 
+    });
 
     if (user) {
       res.status(201).json({
@@ -33,13 +44,18 @@ router.post('/register', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        purchasedCourses: user.purchasedCourses,
+        purchasedCourses: user.purchasedCourses || [],
         token: generateToken(user._id)
       });
+    } else {
+      throw new Error("User creation failed in database");
     }
   } catch (error) {
     console.error("REGISTRATION ERROR:", error);
-    res.status(500).json({ message: error.message || "Registration failed on server" });
+    res.status(500).json({ 
+      message: error.message || "Registration failed on server",
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
