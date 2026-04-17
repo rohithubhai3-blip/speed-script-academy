@@ -93,15 +93,19 @@ const seed = async () => {
     await mongoose.connect(uri);
     console.log(`[SEED] Successfully CONNECTED to Database: ${mongoose.connection.name}`);
     
-    // Clear existing
-    await Course.deleteMany({});
-    await SiteContent.deleteMany({});
-
-    // Add new
-    await Course.insertMany(MOCK_COURSES);
-    await SiteContent.create(INITIAL_SITE_CONTENT);
-
-    console.log('Database Seeded Successfully!');
+    // Clear existing SITE CONTENT ONLY (Courses are PRESERVED)
+    console.log('[SEED] Ensuring branding is updated (preserving courses)...');
+    
+    // UPSERT: Update if exists, create if not. This PRESERVES other data.
+    const content = await SiteContent.findOneAndUpdate(
+       { key: 'main' },
+       INITIAL_SITE_CONTENT,
+       { upsert: true, new: true }
+    );
+    
+    console.log(`[SEED] SUCCESS: Site Content Updated with Title: "${content.hero.title}"`);
+    console.log('[SEED] NOTE: Your created courses were NOT affected. 🛡️');
+    console.log('[SEED] Database Seeded Successfully! 🎯');
     process.exit();
   } catch (err) {
     console.error('Seeding failed:', err);
