@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
@@ -24,6 +24,10 @@ export default function AdminDashboard() {
   
   const [editingCourseId, setEditingCourseId] = useState(null);
   const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0 });
+
+  // User Management State
+  const [selectedUserForAccess, setSelectedUserForAccess] = useState(null);
+  const [userAccessForm, setUserAccessForm] = useState([]); // Array of course IDs
   
   const [editingLessonConfig, setEditingLessonConfig] = useState(null); // {courseId, levelId, lessonId}
   
@@ -79,6 +83,35 @@ export default function AdminDashboard() {
       setNewUser({ name: '', email: '', password: '', role: 'user' });
       loadData();
     } catch (err) { alert(err.message); }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
+    try {
+      await db.deleteUser(userId);
+      alert("User deleted successfully!");
+      loadData();
+    } catch (err) { alert(err.message); }
+  };
+
+  const openAccessModal = (user) => {
+    setSelectedUserForAccess(user);
+    setUserAccessForm(user.purchasedCourses || []);
+  };
+
+  const handleUpdateAccess = async () => {
+    try {
+      await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, userAccessForm);
+      alert("User access updated successfully!");
+      setSelectedUserForAccess(null);
+      loadData();
+    } catch (err) { alert(err.message); }
+  };
+
+  const toggleCourseInAccessForm = (courseId) => {
+    setUserAccessForm(prev => 
+      prev.includes(courseId) ? prev.filter(id => id !== courseId) : [...prev, courseId]
+    );
   };
 
   const handleSaveCourse = async (e) => {
@@ -326,6 +359,8 @@ export default function AdminDashboard() {
                     <th style={{ padding: '16px 8px' }}>Name</th>
                     <th style={{ padding: '16px 8px' }}>Email</th>
                     <th style={{ padding: '16px 8px' }}>Role</th>
+                    <th style={{ padding: '16px 8px' }}>Access</th>
+                    <th style={{ padding: '16px 8px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -337,6 +372,28 @@ export default function AdminDashboard() {
                         <span style={{ fontSize: '0.75rem', background: u.role === 'admin' ? 'var(--warning)' : 'rgba(56,189,248,0.2)', color: u.role === 'admin' ? '#000' : 'var(--primary)', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                           {u.role}
                         </span>
+                      </td>
+                      <td style={{ padding: '16px 8px' }}>
+                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                            {u.purchasedCourses?.length > 0 ? (
+                               u.purchasedCourses.map(cid => {
+                                  const c = courses.find(course => course.id === cid);
+                                  return (
+                                     <span key={cid} style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '100px', background: 'var(--bg-base)', border: '1px solid var(--border-color)' }}>
+                                        {c?.title || cid}
+                                     </span>
+                                  )
+                               })
+                            ) : (
+                               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>No Courses</span>
+                            )}
+                         </div>
+                      </td>
+                      <td style={{ padding: '16px 8px', textAlign: 'right' }}>
+                         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => openAccessModal(u)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer' }} title="Manage Access"><ShieldCheck size={18} /></button>
+                            <button onClick={() => handleDeleteUser(u._id || u.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete User"><Trash2 size={18} /></button>
+                         </div>
                       </td>
                     </tr>
                   ))}
@@ -842,6 +899,40 @@ export default function AdminDashboard() {
               </div>
            </div>
         </div>
+      )}
+
+      {/* ACCESS CONTROL MODAL */}
+      {selectedUserForAccess && (
+         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '32px', position: 'relative' }}>
+               <button onClick={() => setSelectedUserForAccess(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24}/></button>
+               
+               <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Manage Access</h2>
+               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Updating permissions for <strong>{selectedUserForAccess.name}</strong></p>
+               
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '10px' }}>
+                  {courses.map(c => (
+                     <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-base)', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', border: userAccessForm.includes(c.id) ? '1px solid var(--primary)' : '1px solid transparent' }}>
+                        <input 
+                           type="checkbox" 
+                           checked={userAccessForm.includes(c.id)} 
+                           onChange={() => toggleCourseInAccessForm(c.id)}
+                           style={{ width: '18px', height: '18px' }}
+                        />
+                        <div style={{ flex: 1 }}>
+                           <p style={{ fontWeight: 600, margin: 0 }}>{c.title}</p>
+                           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{c.id}</p>
+                        </div>
+                     </label>
+                  ))}
+               </div>
+
+               <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
+                  <button onClick={handleUpdateAccess} className="btn btn-primary" style={{ flex: 1 }}>Apply Changes</button>
+                  <button onClick={() => setSelectedUserForAccess(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+               </div>
+            </div>
+         </div>
       )}
     </div>
   );

@@ -164,6 +164,16 @@ export const db = {
     return res.data;
   },
 
+  async deleteUser(userId) {
+    const res = await api.delete(`/auth/${userId}`, { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async updateUserAccess(userId, purchasedCourses) {
+    const res = await api.put(`/auth/${userId}/access`, { purchasedCourses }, { headers: getAuthHeader() });
+    return res.data;
+  },
+
   async getPromos() {
     // Basic placeholder since we don't have a Promo model yet
     return [];
