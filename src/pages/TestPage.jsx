@@ -175,16 +175,21 @@ export default function TestPage() {
     };
 
     const analysis = analyzeTestResult(lesson.passage, typedText, timeTakenMin, rules);
-    setResult(analysis);
     
-    await db.saveAttempt(user.id, {
+    // Add rules to result for UI display
+    const finalResult = { ...analysis, rules };
+    setResult(finalResult);
+
+    // Save attempt
+    await db.addAttempt({
+      userId: user.id,
+      userName: user.name,
       courseId,
       levelId,
       lessonId,
-      wpm: analysis.wpm,
-      accuracy: analysis.accuracy,
-      mistakes: analysis.totalMistakes,
-      cheatingWarnings: warnings
+      lessonTitle: lesson.title,
+      ...finalResult,
+      timestamp: Date.now()
     });
 
     loadAnalytics();
@@ -489,161 +494,163 @@ export default function TestPage() {
       </div>
 
       {status === "finished" && result && (
-        <div className="glass-card" style={{ padding: '32px', animation: 'fadeIn 0.5s ease-out' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', color: 'var(--success)' }}>
-            <CheckCircle size={32} />
-            <h2 style={{ fontSize: '2rem' }}>Test Completed</h2>
-          </div>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', animation: 'fadeIn 0.5s ease-out' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-            <div style={{ background: 'rgba(56, 189, 248, 0.05)', border: '1px solid rgba(56, 189, 248, 0.1)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px', textTransform: 'uppercase' }}>Net WPM</p>
-              <h3 style={{ fontSize: '1.8rem', color: 'var(--primary)' }}>{result.wpm}</h3>
+          <div className="glass-card" style={{ padding: '48px', marginBottom: '32px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+            {/* PASS/FAIL BADGE */}
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              right: '24px',
+              transform: 'rotate(15deg)',
+              border: `4px double ${parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent || 5) ? '#22c55e' : '#ef4444'}`,
+              color: parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent || 5) ? '#22c55e' : '#ef4444',
+              padding: '12px 24px',
+              borderRadius: '8px',
+              fontWeight: '900',
+              fontSize: '1.5rem',
+              textTransform: 'uppercase',
+              background: 'rgba(255,255,255,0.05)',
+              boxShadow: '0 0 20px rgba(0,0,0,0.1)',
+              zIndex: 10
+            }}>
+              {parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent || 5) ? 'Passed' : 'Not Qualified'}
             </div>
-            <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.1)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px', textTransform: 'uppercase' }}>Accuracy</p>
-              <h3 style={{ fontSize: '1.8rem', color: parseFloat(result.accuracy) > (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)' }}>{result.accuracy}%</h3>
+
+            <div style={{ marginBottom: '32px' }}>
+               <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '8px' }}>Course Completed</h2>
+               <p style={{ color: 'var(--text-secondary)' }}>Detailed evaluation for <strong>{lesson.title}</strong></p>
             </div>
-            <div style={{ background: 'rgba(244, 63, 94, 0.05)', border: '1px solid rgba(244, 63, 94, 0.1)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px', textTransform: 'uppercase' }}>Mistakes</p>
-              <h3 style={{ fontSize: '1.8rem', color: 'var(--danger)' }}>{result.totalMistakes}</h3>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px', textTransform: 'uppercase' }}>Errors (F/H)</p>
-              <h3 style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>{result.fullMistakes} / {result.halfMistakes}</h3>
-            </div>
-            {warnings > 0 && (
-              <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.1)', padding: '16px', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px', textTransform: 'uppercase' }}>Warnings</p>
-                <h3 style={{ fontSize: '1.8rem', color: 'var(--warning)' }}>{warnings}</h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+              
+              {/* ACCURACY GAUGE */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: '24px' }}>
+                 <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '16px' }}>
+                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%' }}>
+                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#eee" strokeWidth="3" />
+                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--primary)" strokeWidth="3" strokeDasharray={`${result.accuracy}, 100`} />
+                    </svg>
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontWeight: 'bold', fontSize: '1.3rem' }}>
+                      {result.accuracy}%
+                    </div>
+                 </div>
+                 <span style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Accuracy Rate</span>
               </div>
-            )}
+
+              {/* NET WPM */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '24px', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
+                 <h3 style={{ fontSize: '3rem', fontWeight: '900', color: 'var(--primary)', lineHeight: 1 }}>{result.wpm}</h3>
+                 <span style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--primary)', marginTop: '8px' }}>Net WPM</span>
+              </div>
+
+              {/* MISTAKE TOTAL */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'rgba(244, 63, 94, 0.05)', borderRadius: '24px', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
+                 <h3 style={{ fontSize: '3rem', fontWeight: '900', color: 'var(--danger)', lineHeight: 1 }}>{result.totalMistakes}</h3>
+                 <span style={{ fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.8rem', color: 'var(--danger)', marginTop: '8px' }}>Total Mistakes</span>
+              </div>
+            </div>
+
+            {/* ERROR CATEGORY TABLE */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px' }}>
+               {[
+                 { label: 'Full Mistakes', val: result.fullMistakes, color: 'var(--danger)' },
+                 { label: 'Half Mistakes', val: result.halfMistakes, color: '#f59e0b' },
+                 { label: 'Omissions', val: result.omissions, color: '#0ea5e9' },
+                 { label: 'Additions', val: result.additions, color: '#ec4899' },
+                 { label: 'Substitutions', val: result.substitutions, color: '#8b5cf6' }
+               ].map(stat => (
+                 <div key={stat.label} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: stat.color }}>{stat.val}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>{stat.label}</div>
+                 </div>
+               ))}
+            </div>
           </div>
 
-          {/* Analytics Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '40px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', marginBottom: '40px' }}>
             
-            {/* Leaderboard Card */}
+            {/* RULES APPLIED BOARD */}
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>Global Leaderboard</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {leaderboard.map((a, i) => (
-                  <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: i === 0 ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>#{i+1}</span>
-                      <span style={{ fontWeight: i === 0 ? 'bold' : 'normal' }}>{a.userName}</span>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{a.wpm} WPM</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{a.accuracy}% Acc</div>
-                    </div>
+               <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '20px', textTransform: 'uppercase' }}>Examination Rules Applied</h4>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                     <span style={{ color: 'var(--text-muted)' }}>Capitalization</span>
+                     <span style={{ fontWeight: 'bold' }}>{result.rules?.capRule || 'Ignore'}</span>
                   </div>
-                ))}
-                {leaderboard.length === 0 && <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No attempts yet.</p>}
-              </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                     <span style={{ color: 'var(--text-muted)' }}>Punctuation</span>
+                     <span style={{ fontWeight: 'bold' }}>{result.rules?.punctRule || 'Ignore'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                     <span style={{ color: 'var(--text-muted)' }}>Spelling / Similar Words</span>
+                     <span style={{ fontWeight: 'bold' }}>{result.rules?.similarWordRule || 'Strict'}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px' }}>
+                     <span style={{ color: 'var(--text-muted)' }}>Allowed Error Threshold</span>
+                     <span style={{ fontWeight: 'bold', color: 'var(--warning)' }}>{lesson.allowedErrorPercent || 5}%</span>
+                  </div>
+               </div>
             </div>
 
-            {/* Performance Graph Card */}
+            {/* PERFORMANCE METRICS */}
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>WPM Progress</h4>
-              {history.length > 1 ? (
-                <div style={{ height: '120px', width: '100%', position: 'relative' }}>
-                  <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                    <polyline
-                      fill="none"
-                      stroke="var(--primary)"
-                      strokeWidth="2"
-                      points={history.map((h, i) => `${(i / (history.length - 1)) * 100},${100 - (h.wpm / 120) * 100}`).join(' ')}
-                    />
-                    {history.map((h, i) => (
-                      <circle key={i} cx={(i / (history.length - 1)) * 100} cy={100 - (h.wpm / 120) * 100} r="2" fill="var(--primary)" />
-                    ))}
-                  </svg>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                    <span>First Attempt</span>
-                    <span>Latest</span>
+               <h4 style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '20px', textTransform: 'uppercase' }}>Performance Summary</h4>
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ textAlign: 'center' }}>
+                     <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{result.totalWords}</div>
+                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Words</div>
                   </div>
-                </div>
-              ) : (
-                <div style={{ height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  More attempts needed for progress graph.
-                </div>
-              )}
+                  <div style={{ textAlign: 'center' }}>
+                     <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary)' }}>{result.typedWords}</div>
+                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Typed Words</div>
+                  </div>
+                  <div style={{ textAlign: 'center', gridColumn: 'span 2', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                     <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
+                       Total Mistakes: <span style={{ color: 'var(--danger)' }}>{result.totalMistakes}</span>
+                     </div>
+                     <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Weighted Score</div>
+                  </div>
+               </div>
             </div>
           </div>
 
-          <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Visual Text Analysis</h3>
+          <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Visual Error Breakdown</h3>
           
-          {/* Mistake Legend */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}><div style={{ width: 12, height: 12, background: '#22c55e', borderRadius: '2px' }}></div> Correct</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}><div style={{ width: 12, height: 12, background: '#ef4444', borderRadius: '2px' }}></div> Mistake / Addition</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}><div style={{ width: 12, height: 12, background: '#0ea5e9', borderRadius: '2px' }}></div> Omission</div>
-          </div>
-
           <div style={{ 
-            background: '#f8fafc', 
-            padding: '24px', 
-            borderRadius: 'var(--radius-sm)', 
-            lineHeight: 2.2, 
+            background: '#ffffff', 
+            padding: '40px', 
+            borderRadius: '24px', 
+            lineHeight: 2.8, 
             border: '1px solid var(--border-color)', 
             color: '#334155',
+            boxShadow: 'var(--shadow-premium)',
             display: 'flex',
             flexWrap: 'wrap',
-            gap: '8px 4px'
+            gap: '12px 6px',
+            marginBottom: '48px'
           }}>
             {result.visualHTML.map((item, idx) => {
-              let style = { padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '4px' };
-              let tooltip = "";
-              let isMistake = item.original && item.type !== 'correct';
+              let style = { padding: '4px 12px', borderRadius: '8px', fontSize: '1.15rem', fontWeight: '500', display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px' };
               
               switch(item.type) {
-                case 'correct':
-                  style = { ...style, background: '#dcfce7', color: '#166534', borderBottom: '2px solid #22c55e' };
-                  break;
-                case 'extra':
-                case 'substitution':
-                case 'spelling':
-                case 'capitalization':
-                case 'punctuation':
-                  style = { ...style, background: '#fee2e2', color: '#991b1b', borderBottom: '2px solid #ef4444' };
-                  tooltip = item.type.charAt(0).toUpperCase() + item.type.slice(1) + " Mistake";
-                  break;
-                case 'missing':
-                  style = { ...style, background: '#e0f2fe', color: '#0369a1', borderBottom: '2px solid #0ea5e9' };
-                  tooltip = "Omission (Missing word)";
-                  break;
-                default:
-                  style = { ...style, opacity: 0.5 };
+                case 'correct': return <span key={idx} style={{ ...style, color: '#1e293b' }}>{item.word}</span>;
+                case 'missing': return <span key={idx} style={{ ...style, background: 'rgba(14, 165, 233, 0.08)', color: '#0369a1', border: '1px dashed #0ea5e9', textDecoration: 'line-through' }}>{item.word}</span>;
+                case 'extra': return <span key={idx} style={{ ...style, background: 'rgba(236, 72, 153, 0.08)', color: '#be185d', border: '1px dashed #ec4899' }}>{item.word} <small style={{ fontSize: '0.6rem', opacity: 0.6 }}>(extra)</small></span>;
+                case 'substitution': return (
+                  <span key={idx} style={{ ...style, background: 'rgba(239, 68, 68, 0.08)', color: '#b91c1c', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                    <span style={{ textDecoration: 'line-through', opacity: 0.5 }}>{item.original}</span>
+                    <ArrowRight size={14} style={{ opacity: 0.5 }} />
+                    {item.word}
+                  </span>
+                );
+                default: return <span key={idx} style={{ ...style, color: '#ef4444', textDecoration: 'underline wavy #ef4444' }}>{item.word}</span>;
               }
-
-              return (
-                <span key={idx} style={style} title={tooltip}>
-                  {item.word}
-                  {isMistake && (
-                    <span style={{ 
-                      fontSize: '0.8em', 
-                      opacity: 0.7, 
-                      fontWeight: 'normal',
-                      paddingLeft: '4px',
-                      borderLeft: '1px solid rgba(153, 27, 27, 0.2)',
-                      marginLeft: '4px'
-                    }}>
-                      ({item.original})
-                    </span>
-                  )}
-                </span>
-              );
             })}
           </div>
 
-          <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
-            <button className="btn btn-outline" onClick={handleReset}>
-              Try Again
-            </button>
-            <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>
-              Go to Dashboard <ArrowRight size={20} />
-            </button>
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+             <button onClick={() => navigate('/courses')} className="btn btn-primary" style={{ padding: '16px 64px', fontSize: '1.2rem', boxShadow: '0 10px 25px rgba(56, 189, 248, 0.3)' }}>Back to Courses</button>
           </div>
         </div>
       )}
