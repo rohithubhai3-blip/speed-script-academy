@@ -109,26 +109,26 @@ export default function TestPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [status]);
 
-  const handleStart = () => {
-    setCountdown(3);
-    setStatus("starting");
-  };
-
-  const startTest = () => {
-    setStatus("running");
-    setStartTime(Date.now());
+  const handleStartListening = () => {
     if (mediaRef.current) {
       mediaRef.current.playbackRate = targetWpm / baseWpm;
       mediaRef.current.play().catch(err => {
-        console.error("Autoplay failed:", err);
-        setModal({
-          isOpen: true,
-          title: "Audio Error",
-          message: "Failed to play audio. Please check your browser permissions or the audio source."
-        });
+        console.error("Playback failed:", err);
       });
       startVisualizer();
     }
+  };
+
+  const handleStartTest = () => {
+    // Phase transition: Stop audio and show typing box
+    if (mediaRef.current) {
+      mediaRef.current.pause();
+      mediaRef.current.currentTime = 0; // Reset
+    }
+    setStatus("running");
+    setStartTime(Date.now());
+    
+    // Focus typing box after a short delay to allow UI to render
     setTimeout(() => {
       if(textAreaRef.current) textAreaRef.current.focus();
     }, 100);
@@ -321,117 +321,113 @@ export default function TestPage() {
 
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         
-        {/* HIDDEN AUDIO ELEMENT */}
-        <audio 
-           ref={mediaRef} 
-           src={lesson.mediaUrl || lesson.audioUrl} 
-           onEnded={handleMediaEnd} 
-           style={{ display: 'none' }}
-        />
-
-        <div style={{ marginBottom: '24px', position: 'relative' }}>
-          {status === "running" && (
-            <canvas 
-              ref={canvasRef} 
-              width="900" 
-              height="80" 
-              style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', pointerEvents: 'none', opacity: 0.8, filter: 'blur(20px)' }} 
-            />
-          )}
-
-          {/* SPEED SELECTOR - REMAINING VISIBLE BEFORE START */}
-          {status === "ready" && (
-             <div style={{
-               marginBottom: '24px',
-               padding: '20px',
-               background: 'var(--bg-surface-elevated)',
-               borderRadius: '16px',
-               border: '1px solid var(--border-color)',
-               boxShadow: 'var(--shadow-drop)'
-             }}>
-               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Settings size={20} style={{ color: 'var(--primary)' }} />
-                    <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Dictation Speed</span>
+        {/* PHASE 1: LISTENING UI */}
+        {status === "ready" && (
+           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div className="premium-player-container" style={{
+                background: 'var(--bg-surface-elevated)',
+                borderRadius: '16px',
+                border: '1px solid var(--border-color)',
+                padding: '32px',
+                boxShadow: 'var(--shadow-drop)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+                  <div style={{ background: 'var(--primary)', color: 'white', padding: '16px', borderRadius: '12px' }}>
+                    <Music size={32} />
                   </div>
-                  <div style={{ background: 'var(--primary)', color: 'white', padding: '6px 16px', borderRadius: '20px', fontSize: '1rem', fontWeight: 'bold' }}>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 'bold' }}>Phase 1: Dictation Listening</p>
+                    <h3 style={{ fontSize: '1.2rem', margin: '4px 0' }}>Listen and take notes carefully.</h3>
+                  </div>
+                </div>
+
+                {/* VISUALIZER BARS */}
+                <canvas 
+                  ref={canvasRef} 
+                  width="800" 
+                  height="60" 
+                  style={{ width: '100%', borderRadius: '8px', background: 'rgba(0,0,0,0.05)', marginBottom: '16px' }} 
+                />
+
+                <audio 
+                  ref={mediaRef} 
+                  src={lesson.mediaUrl || lesson.audioUrl} 
+                  onEnded={handleMediaEnd} 
+                  controls={true}
+                  onPlay={handleStartListening}
+                  style={{ width: '100%', height: '40px', filter: 'invert(0.1)' }}
+                />
+              </div>
+
+              {/* SPEED SELECTOR */}
+              <div style={{
+                padding: '24px',
+                background: 'var(--bg-surface-elevated)',
+                borderRadius: '16px',
+                border: '1px solid var(--border-color)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <span style={{ fontWeight: 'bold' }}>Set Dictation Speed (WPM)</span>
+                  <div style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontWeight: 'bold' }}>
                     {targetWpm} WPM
                   </div>
-               </div>
-               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Slow</span>
-                 <input 
-                   type="range" 
-                   min="40" 
-                   max="140" 
-                   step="5" 
-                   value={targetWpm} 
-                   onChange={(e) => setTargetWpm(parseInt(e.target.value))}
-                   style={{ flex: 1, accentColor: 'var(--primary)', height: '10px', cursor: 'pointer' }}
-                 />
-                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fast</span>
-               </div>
-               <p style={{ marginTop: '16px', fontSize: '0.9rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                 <PlayCircle size={14} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
-                 The timer and audio will start <strong>automatically</strong> as soon as you type the first character.
-               </p>
-             </div>
-          )}
-        </div>
-
-        {(status === "running" || status === "ready") && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
-            {/* Warning Popup */}
-            {showLockWarning && (
-              <div style={{
-                position: 'absolute',
-                top: '-40px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(244, 63, 94, 0.9)',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.85rem',
-                fontWeight: 'bold',
-                zIndex: 10,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                animation: 'fadeInOut 2s ease-in-out'
-              }}>
-                Warning: You cannot edit previously typed words!
+                </div>
+                <input 
+                  type="range" 
+                  min="40" 
+                  max="140" 
+                  step="5" 
+                  value={targetWpm} 
+                  onChange={(e) => setTargetWpm(parseInt(e.target.value))}
+                  style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                />
               </div>
-            )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)', padding: '8px 20px', borderRadius: 'var(--radius-full)', fontWeight: 'bold', fontSize: '1.2rem', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Ready to transcribe? After clicking the button below, the audio will stop and the timer will start.</p>
+                <button className="btn btn-primary" onClick={handleStartTest} style={{ padding: '16px 48px', fontSize: '1.2rem', borderRadius: 'var(--radius-full)' }}>
+                   Start Test
+                </button>
+              </div>
+           </div>
+        )}
+
+        {/* PHASE 2: TRANSCRIPTION UI */}
+        {(status === "running") && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ background: 'var(--primary)', color: 'white', padding: '8px 24px', borderRadius: 'var(--radius-full)', fontWeight: 'bold', fontSize: '1.4rem' }}>
                   {formatTime(timeLeft)}
                 </div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                  Speed: <strong>{targetWpm} WPM</strong>
+                <div style={{ color: 'var(--text-secondary)' }}>
+                  Phase 2: Typing / Transcription
                 </div>
               </div>
-              {status === "running" && (
-                <button className="btn btn-outline" onClick={handleSubmit} style={{ borderColor: 'var(--danger)', color: 'var(--danger)', padding: '8px 16px' }}>
-                  Force Submit
-                </button>
-              )}
+              <button 
+                className="btn" 
+                onClick={handleSubmit} 
+                style={{ 
+                  background: 'rgba(244, 63, 94, 0.1)', 
+                  color: 'var(--danger)', 
+                  border: '1px solid var(--danger)',
+                  padding: '8px 24px' 
+                }}
+              >
+                End Test
+              </button>
             </div>
+
             <textarea 
               ref={textAreaRef}
               value={typedText}
-              onChange={(e) => {
-                 setTypedText(e.target.value);
-                 if (status === "ready" && e.target.value.length > 0) {
-                    startTest();
-                 }
-              }}
+              onChange={(e) => setTypedText(e.target.value)}
               onKeyDown={handleKeyDown}
               onPaste={handlePasteDisabled}
               onContextMenu={(e) => e.preventDefault()}
               className="input-field"
-              placeholder={status === "ready" ? "Start typing here to begin the dictation and timer..." : "Type exactly what you hear..."}
-              style={{ minHeight: '300px', resize: 'vertical', fontSize: '1.1rem', lineHeight: 1.6, border: status === 'ready' ? '2px dashed var(--primary)' : '1px solid var(--border-color)' }}
+              placeholder="Type your shorthand transcription here..."
+              style={{ minHeight: '400px', resize: 'vertical', fontSize: '1.2rem', lineHeight: 1.8, padding: '24px' }}
               autoComplete="off"
               spellCheck="false"
             />
