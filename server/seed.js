@@ -87,8 +87,11 @@ const INITIAL_SITE_CONTENT = {
 };
 
 const seed = async () => {
+  const uri = process.env.MONGO_URI || 'mongodb://localhost:27017/ssa';
+  console.log(`[SEED] Attempting connection to ${uri.substring(0, 30)}...`);
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ssa');
+    await mongoose.connect(uri);
+    console.log(`[SEED] Successfully CONNECTED to Database: ${mongoose.connection.name}`);
     
     // Clear existing
     await Course.deleteMany({});
