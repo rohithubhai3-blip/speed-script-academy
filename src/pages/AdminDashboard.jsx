@@ -28,6 +28,9 @@ export default function AdminDashboard() {
   // User Management State
   const [selectedUserForAccess, setSelectedUserForAccess] = useState(null);
   const [userAccessForm, setUserAccessForm] = useState([]); // Array of course IDs
+
+  const [selectedUserForPasswordReset, setSelectedUserForPasswordReset] = useState(null);
+  const [newPasswordValue, setNewPasswordValue] = useState('');
   
   const [editingLessonConfig, setEditingLessonConfig] = useState(null); // {courseId, levelId, lessonId}
   
@@ -99,6 +102,11 @@ export default function AdminDashboard() {
     setUserAccessForm(user.purchasedCourses || []);
   };
 
+  const openResetModal = (user) => {
+    setSelectedUserForPasswordReset(user);
+    setNewPasswordValue('');
+  };
+
   const handleUpdateAccess = async () => {
     try {
       await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, userAccessForm);
@@ -114,14 +122,14 @@ export default function AdminDashboard() {
     );
   };
 
-  const handleResetPassword = async (user) => {
-    const newPassword = window.prompt(`Enter new password for ${user.name}:`);
-    if (!newPassword || newPassword.length < 6) {
+  const handleResetPasswordFinal = async () => {
+    if (!newPasswordValue || newPasswordValue.length < 6) {
        return alert("Password must be at least 6 characters.");
     }
     try {
-       await db.resetUserPassword(user._id || user.id, newPassword);
+       await db.resetUserPassword(selectedUserForPasswordReset._id || selectedUserForPasswordReset.id, newPasswordValue);
        alert("Password reset successfully! 🔐");
+       setSelectedUserForPasswordReset(null);
     } catch (err) { alert(err.message); }
   };
 
@@ -402,7 +410,7 @@ export default function AdminDashboard() {
                       </td>
                       <td style={{ padding: '16px 8px', textAlign: 'right' }}>
                          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => handleResetPassword(u)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer' }} title="Reset Password"><Key size={18} /></button>
+                            <button onClick={() => openResetModal(u)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer' }} title="Reset Password"><Key size={18} /></button>
                             <button onClick={() => openAccessModal(u)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer' }} title="Manage Access"><ShieldCheck size={18} /></button>
                             <button onClick={() => handleDeleteUser(u._id || u.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete User"><Trash2 size={18} /></button>
                          </div>
@@ -942,6 +950,49 @@ export default function AdminDashboard() {
                <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
                   <button onClick={handleUpdateAccess} className="btn btn-primary" style={{ flex: 1 }}>Apply Changes</button>
                   <button onClick={() => setSelectedUserForAccess(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
+               </div>
+            </div>
+         </div>
+      )}
+         </div>
+      )}
+
+      {/* PASSWORD RESET MODAL */}
+      {selectedUserForPasswordReset && (
+         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(12px)' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', position: 'relative', border: '1px solid rgba(255,255,255,0.1)' }}>
+               <button onClick={() => setSelectedUserForPasswordReset(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24}/></button>
+               
+               <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(234, 179, 8, 0.1)', color: 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                     <Key size={32} />
+                  </div>
+                  <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Reset Password</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Account: <strong>{selectedUserForPasswordReset.name}</strong></p>
+               </div>
+
+               <div className="input-group">
+                  <label className="input-label">New Password</label>
+                  <div style={{ position: 'relative' }}>
+                     <input 
+                        type="text" 
+                        autoFocus
+                        className="input-field" 
+                        placeholder="Enter secure password"
+                        value={newPasswordValue}
+                        onChange={e => setNewPasswordValue(e.target.value)}
+                        style={{ paddingLeft: '40px' }}
+                     />
+                     <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                        <Lock size={18} />
+                     </div>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px' }}>Must be at least 6 characters long.</p>
+               </div>
+
+               <div style={{ marginTop: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <button onClick={handleResetPasswordFinal} className="btn btn-primary" style={{ background: 'var(--warning)', color: 'black' }}>Update Now</button>
+                  <button onClick={() => setSelectedUserForPasswordReset(null)} className="btn btn-outline">Cancel</button>
                </div>
             </div>
          </div>
