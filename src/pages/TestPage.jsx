@@ -163,31 +163,65 @@ export default function TestPage() {
       mediaRef.current.pause();
     }
 
-    const timeTakenMs = Date.now() - startTime;
-    let timeTakenMin = timeTakenMs / 60000;
-    
-    if(timeTakenMin < 0.01) timeTakenMin = 1; 
+    try {
+      // Safety: If startTime was never set (test ended without typing), use a default
+      const timeTakenMs = startTime ? (Date.now() - startTime) : 1000;
+      let timeTakenMin = timeTakenMs / 60000;
+      if (timeTakenMin <= 0) timeTakenMin = 0.01;
 
-    const rules = {
-      capRule: lesson.capRule || "Ignore",
-      punctRule: lesson.punctRule || "Ignore",
-      similarWordRule: lesson.similarWordRule || "Strict"
-    };
+      const rules = {
+        capRule: lesson.capRule || "Ignore",
+        punctRule: lesson.punctRule || "Ignore",
+        similarWordRule: lesson.similarWordRule || "Strict"
+      };
 
-    const analysis = analyzeTestResult(lesson.passage, typedText, timeTakenMin, rules);
-    setResult({ ...analysis, rules }); // Include rules for UI display
-    
-    await db.saveAttempt(user.id, {
-      courseId,
-      levelId,
-      lessonId,
-      wpm: analysis.wpm,
-      accuracy: analysis.accuracy,
-      mistakes: analysis.totalMistakes,
-      cheatingWarnings: warnings
-    });
+      const analysis = analyzeTestResult(lesson.passage, typedText, timeTakenMin, rules);
+      
+      // Ensure all required fields exist to prevent UI crashes
+      const safeResult = {
+        ...analysis,
+        wpm: analysis.wpm || 0,
+        accuracy: analysis.accuracy || "0.00",
+        totalMistakes: analysis.totalMistakes || 0,
+        fullMistakes: analysis.fullMistakes || 0,
+        halfMistakes: analysis.halfMistakes || 0,
+        totalWords: analysis.totalWords || 0,
+        typedWords: analysis.typedWords || 0,
+        visualHTML: analysis.visualHTML || [],
+        rules: rules
+      };
 
-    loadAnalytics();
+      setResult(safeResult);
+      
+      // Secondary fire-and-forget save to database
+      db.saveAttempt(user.id, {
+        courseId,
+        levelId,
+        lessonId,
+        wpm: safeResult.wpm,
+        accuracy: safeResult.accuracy,
+        mistakes: safeResult.totalMistakes,
+        cheatingWarnings: warnings,
+        timestamp: new Date().toISOString()
+      }).catch(err => console.error("Database save failed:", err));
+
+      loadAnalytics();
+
+    } catch (err) {
+      console.error("Test Submission Error:", err);
+      // Fallback state to prevent blank screen
+      setResult({
+        wpm: 0,
+        accuracy: "0.00",
+        totalMistakes: 0,
+        fullMistakes: 0,
+        halfMistakes: 0,
+        totalWords: 0,
+        typedWords: 0,
+        visualHTML: [],
+        rules: { capRule: 'Ignore', punctRule: 'Ignore', similarWordRule: 'Strict' }
+      });
+    }
   };
 
   const loadAnalytics = async () => {
@@ -561,27 +595,24 @@ export default function TestPage() {
             {/* Performance Graph Card */}
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>WPM Progress</h4>
-              {history.length > 1 ? (
+          {history.length > 1 ? (
                 <div style={{ height: '120px', width: '100%', position: 'relative' }}>
                   <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
                     <polyline
                       fill="none"
                       stroke="var(--primary)"
                       strokeWidth="2"
-                      points={history.map((h, i) => `${(i / (history.length - 1)) * 100},${100 - (h.wpm / 120) * 100}`).join(' ')}
+                      points={history.filter(h => h.wpm && !isNaN(h.wpm)).map((h, i) => `${(i / (history.length - 1)) * 100},${100 - (Math.min(h.wpm, 120) / 120) * 100}`).join(' ')}
                     />
-                    {history.map((h, i) => (
-                      <circle key={i} cx={(i / (history.length - 1)) * 100} cy={100 - (h.wpm / 120) * 100} r="2" fill="var(--primary)" />
-                    ))}
                   </svg>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
-                    <span>First Attempt</span>
+                    <span>First</span>
                     <span>Latest</span>
                   </div>
                 </div>
               ) : (
                 <div style={{ height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                  More attempts needed for progress graph.
+                  More attempts needed for graph.
                 </div>
               )}
             </div>
