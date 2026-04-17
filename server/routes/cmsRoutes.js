@@ -2,6 +2,7 @@ import express from 'express';
 import { protect, adminOnly } from '../middleware/auth.js';
 import CourseModel from '../models/Course.js';
 import SiteContentModel from '../models/SiteContent.js';
+import SettingsModel from '../models/Settings.js';
 
 const router = express.Router();
 
@@ -20,12 +21,15 @@ router.get('/seed', async (req, res) => {
   try {
     // Basic security: require a simple query param or just warn that this is for one-time setup
     // For ease of use for the user, we will keep it simple.
-    const { MOCK_COURSES, INITIAL_SITE_CONTENT } = await import('../seed_logic.js');
+    const { MOCK_COURSES, INITIAL_SITE_CONTENT, INITIAL_SETTINGS } = await import('../seed_logic.js');
     
     await CourseModel.deleteMany({});
     await SiteContentModel.deleteMany({});
+    await SettingsModel.deleteMany({});
+    
     await CourseModel.insertMany(MOCK_COURSES);
     await SiteContentModel.create(INITIAL_SITE_CONTENT);
+    await SettingsModel.create(INITIAL_SETTINGS);
 
     res.json({ message: 'Database Seeded Successfully! You can now delete this route for security.' });
   } catch (error) {

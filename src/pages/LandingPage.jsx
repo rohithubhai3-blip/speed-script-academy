@@ -24,7 +24,12 @@ export default function LandingPage() {
     db.getSiteContent().then(setContent);
   }, []);
 
-  if (!content) return null;
+  if (!content) return (
+    <div style={{ padding: '100px 20px', textAlign: 'center', minHeight: '80vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <h2 className="animate-pulse">Loading Academy Experience...</h2>
+      <p style={{ color: 'var(--text-secondary)' }}>Preparing your seat in the classroom.</p>
+    </div>
+  );
 
   return (
     <div style={{ paddingBottom: '0px' }}>

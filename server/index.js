@@ -7,6 +7,7 @@ import courseRoutes from './routes/courseRoutes.js';
 import cmsRoutes from './routes/cmsRoutes.js';
 import resultRoutes from './routes/resultRoutes.js';
 import mediaRoutes from './routes/mediaRoutes.js';
+import purchaseRoutes from './routes/purchaseRoutes.js';
 
 dotenv.config();
 
@@ -53,6 +54,7 @@ app.use('/api/courses', courseRoutes);
 app.use('/api/cms', cmsRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/purchase', purchaseRoutes);
 
 // Export for Vercel
 export default app;

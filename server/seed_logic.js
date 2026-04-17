@@ -72,8 +72,15 @@ export const INITIAL_SITE_CONTENT = {
   },
   refund: {
     title: "Refund Policy",
-    content: "Course fees are generally non-refundable once content is accessed. For manual payments, if you encounter technical issues prevent course access, a full refund can be requested within 24 hours of payment. Please contact our support team via WhatsApp for refund queries."
+    content: "Course fees are generally non-refundable once content is accessed. For manual payments, if you encounter technical issues prevent course access, a full refund can be requested with 24 hours of payment."
   }
+};
+
+export const INITIAL_SETTINGS = {
+  key: 'global',
+  upiId: 'rohitjkbank@ybl',
+  whatsappNumber: '9877878802',
+  qrCodeUrl: ''
 };
 
 export { Course, SiteContent };

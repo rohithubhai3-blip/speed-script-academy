@@ -65,7 +65,6 @@ export const db = {
 
   // --- RESULTS ---
   async saveAttempt(userId, attemptData) {
-    // attemptData: { courseId, levelId, lessonId, typedText, timeTakenMinutes, warnings }
     const res = await api.post('/results/submit', attemptData, {
       headers: getAuthHeader()
     });
@@ -83,6 +82,88 @@ export const db = {
     const res = await api.get('/results/all', {
       headers: getAuthHeader()
     });
+    return res.data;
+  },
+
+  // --- PURCHASE & SETTINGS ---
+  async getGlobalSettings() {
+    const res = await api.get('/purchase/settings');
+    return res.data;
+  },
+
+  async updateGlobalSettings(settings) {
+    const res = await api.post('/purchase/settings', settings, {
+      headers: getAuthHeader()
+    });
+    return res.data;
+  },
+
+  async submitPurchaseRequest(userId, courseId) {
+    const res = await api.post('/purchase/submit', { courseId }, {
+      headers: getAuthHeader()
+    });
+    return res.data;
+  },
+
+  async getPendingRequests() {
+    const user = JSON.parse(localStorage.getItem('ssa_user') || '{}');
+    const endpoint = user.role === 'admin' ? '/purchase/all' : '/purchase/my';
+    const res = await api.get(endpoint, {
+      headers: getAuthHeader()
+    });
+    return res.data;
+  },
+
+  async purchaseCourse(userId, courseId) {
+    // This is called by Admin to approve a request
+    // We need to find the request ID first or just have a direct endpoint
+    // In our purchaseRoutes, we have approve/:id. 
+    // Let's add a helper to find and approve.
+    const requests = await this.getPendingRequests();
+    const req = requests.find(r => (r.userId?._id === userId || r.userId === userId) && r.courseId === courseId);
+    if (req) {
+       const res = await api.put(`/purchase/approve/${req._id || req.id}`, {}, {
+         headers: getAuthHeader()
+       });
+       return res.data;
+    }
+    throw new Error("Request not found");
+  },
+
+  async redeemPromoCode(userId, promoCode) {
+    if (promoCode === 'FREE2024') {
+       return { ...JSON.parse(localStorage.getItem('ssa_user')), purchasedCourses: ['course-demo', 'course-1'] };
+    }
+    throw new Error("Invalid or Expired Promo Code");
+  },
+
+  // --- ADMIN ONLY ---
+  async getAllUsers() {
+    const res = await api.get('/auth/users', { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async adminCreateUser(email, password, name, role) {
+    const res = await api.post('/auth/admin/create-user', { email, password, name, role }, { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async getPromos() {
+    // Basic placeholder since we don't have a Promo model yet
+    return [];
+  },
+
+  async generatePromoCode(courseId) {
+    return "FREE-" + Math.random().toString(36).substring(7).toUpperCase();
+  },
+
+  async addLesson(courseId, levelId, lessonData) {
+    const res = await api.post(`/courses/lesson/${courseId}/${levelId}`, lessonData, { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async editLesson(courseId, levelId, lessonId, lessonData) {
+    const res = await api.put(`/courses/lesson/${courseId}/${levelId}/${lessonId}`, lessonData, { headers: getAuthHeader() });
     return res.data;
   },
 
