@@ -81,4 +81,43 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   POST /api/courses/lesson/:courseId/:levelId (Admin Only)
+router.post('/lesson/:courseId/:levelId', protect, adminOnly, async (req, res) => {
+  const { courseId, levelId } = req.params;
+  try {
+    const course = await CourseModel.findOne({ id: courseId });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    const level = course.levels.find(l => l.id === levelId);
+    if (!level) return res.status(404).json({ message: 'Level not found' });
+
+    level.lessons.push(req.body);
+    await course.save();
+    res.status(201).json(course);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   PUT /api/courses/lesson/:courseId/:levelId/:lessonId (Admin Only)
+router.put('/lesson/:courseId/:levelId/:lessonId', protect, adminOnly, async (req, res) => {
+  const { courseId, levelId, lessonId } = req.params;
+  try {
+    const course = await CourseModel.findOne({ id: courseId });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    const level = course.levels.find(l => l.id === levelId);
+    if (!level) return res.status(404).json({ message: 'Level not found' });
+
+    const lessonIndex = level.lessons.findIndex(ls => ls.id === lessonId);
+    if (lessonIndex === -1) return res.status(404).json({ message: 'Lesson not found' });
+
+    level.lessons[lessonIndex] = { ...level.lessons[lessonIndex].toObject(), ...req.body };
+    await course.save();
+    res.status(200).json(course);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
