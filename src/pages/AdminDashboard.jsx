@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
-import { storage } from '../firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import axios from 'axios';
 import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -197,34 +196,38 @@ export default function AdminDashboard() {
       setIsUploading(true);
       setUploadProgress(0);
 
-      // 1. Create a storage reference
-      const storageRef = ref(storage, `audio/${Date.now()}_${file.name}`);
+      // --- THE SILVER BULLET FIX (Unsigned Cloudinary Upload) ---
+      const cloudName = 'dnnczci7d'; 
+      const uploadPreset = 'ssastorage'; 
 
-      // 2. Start the upload task
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', uploadPreset);
 
-      // 3. Monitor progress
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(Math.round(progress));
-        }, 
-        (error) => {
-          console.error("Firebase Upload Failed:", error);
-          alert("Upload Failed: " + error.message);
-          setIsUploading(false);
-        }, 
-        async () => {
-          // 4. Handle success
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setNewLesson(prev => ({ ...prev, mediaUrl: downloadURL }));
-          alert("Audio Uploaded Successfully to Firebase! 🚀");
-          setIsUploading(false);
+      // Upload DIRECTLY from the browser to Cloudinary
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+        formData,
+        {
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+          }
         }
       );
+
+      const result = response.data;
+      
+      if (result.secure_url) {
+        setNewLesson(prev => ({ ...prev, mediaUrl: result.secure_url }));
+        alert("Audio Uploaded Successfully! (Live on Cloud) 🚀");
+      } else {
+        throw new Error("Upload failed: No URL returned");
+      }
     } catch (err) {
-      console.error("General Upload Failed:", err);
-      alert("Upload Failed: " + err.message);
+      console.error("Cloud Upload Failed:", err);
+      alert("Cloud Upload Failed: " + (err.response?.data?.error?.message || err.message));
+    } finally {
       setIsUploading(false);
     }
   };
