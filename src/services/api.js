@@ -72,6 +72,13 @@ export const db = {
     return res.data;
   },
 
+  async deleteCourse(courseId) {
+    const res = await api.delete(`/courses/${courseId}`, {
+      headers: getAuthHeader()
+    });
+    return res.data;
+  },
+
   // --- RESULTS ---
   async saveAttempt(userId, attemptData) {
     const res = await api.post('/results/submit', attemptData, {

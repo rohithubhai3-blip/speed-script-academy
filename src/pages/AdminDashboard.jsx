@@ -88,11 +88,30 @@ export default function AdminDashboard() {
         await db.editCourse(editingCourseId, newCourse);
         alert("Course updated!");
       } else {
-        await db.addCourse(newCourse);
-        alert("Course created!");
+        // Fix: Generate a unique ID (slug) because the database requires it
+        const courseWithId = { 
+          ...newCourse, 
+          id: newCourse.title.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
+          levels: [
+            { id: 'level-normal', title: 'Normal', lessons: [] },
+            { id: 'level-inter', title: 'Intermediate', lessons: [] },
+            { id: 'level-adv', title: 'Advanced', lessons: [] }
+          ]
+        };
+        await db.addCourse(courseWithId);
+        alert("Course created successfully!");
       }
       setEditingCourseId(null);
       setNewCourse({ title: '', description: '', price: 0 });
+      loadData();
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleDeleteCourse = async (courseId) => {
+    if (!window.confirm("Are you sure you want to delete this course and all its lessons?")) return;
+    try {
+      await db.deleteCourse(courseId);
+      alert("Course deleted successfully!");
       loadData();
     } catch (err) { alert(err.message); }
   };
@@ -165,7 +184,12 @@ export default function AdminDashboard() {
         await db.editLesson(editingLessonConfig.courseId, editingLessonConfig.levelId, editingLessonConfig.lessonId, newLesson);
         alert(isPermanent ? "Test Updated and Saved Permanently!" : "Test Updated!");
       } else {
-        await db.addLesson(activeCourseIdForLesson, activeLevelIdForLesson, newLesson);
+        // Fix: Generate unique ID for the lesson to prevent 500 error
+        const lessonWithId = {
+          ...newLesson,
+          id: newLesson.title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36)
+        };
+        await db.addLesson(activeCourseIdForLesson, activeLevelIdForLesson, lessonWithId);
         alert(isPermanent ? "Test Created and Saved Permanently to Database!" : "Test Created and Saved Successfully!");
       }
 
@@ -385,7 +409,10 @@ export default function AdminDashboard() {
                 <div key={c.id} style={{ marginBottom: '16px', background: 'var(--bg-base)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 style={{ color: 'var(--primary)' }}>{c.title}</h3>
-                    <button onClick={() => startEditCourse(c)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Edit Course Info"><Edit3 size={18} /></button>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => startEditCourse(c)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Edit Course Info"><Edit3 size={18} /></button>
+                      <button onClick={() => handleDeleteCourse(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete Course"><Users size={18} style={{ color: 'var(--danger)' }} /> </button>
+                    </div>
                   </div>
                   
                   <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginLeft: '16px', marginTop: '8px' }}>

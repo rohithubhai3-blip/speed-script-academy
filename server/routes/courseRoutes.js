@@ -71,5 +71,14 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// @route   DELETE /api/courses/:id (Admin Only)
+router.delete('/:id', protect, adminOnly, async (req, res) => {
+  try {
+    await CourseModel.findOneAndDelete({ id: req.params.id });
+    res.json({ message: 'Course deleted success' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 export default router;
