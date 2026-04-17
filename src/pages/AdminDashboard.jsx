@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { db } from '../data/db';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const [attempts, setAttempts] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [globalSettings, setGlobalSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '' });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [siteContent, setSiteContent] = useState(null);
@@ -188,19 +189,44 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 4 * 1024 * 1024) {
-      alert("Warning: Files larger than 4MB may fail to save in LocalStorage prototype. Consider using a URL instead.");
-    }
+    try {
+      setIsUploading(true);
+      
+      // 1. Get Secure Signature from Backend
+      const { data: sig } = await api.get('/media/signature');
+      
+      // 2. Prepare Form Data for Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', sig.apiKey);
+      formData.append('timestamp', sig.timestamp);
+      formData.append('signature', sig.signature);
+      formData.append('folder', sig.folder);
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setNewLesson(prev => ({ ...prev, mediaUrl: event.target.result }));
-    };
-    reader.readAsDataURL(file);
+      // 3. Upload Directly to Cloudinary
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.secure_url) {
+        setNewLesson(prev => ({ ...prev, mediaUrl: result.secure_url }));
+        alert("File Uploaded Successfully to Cloud!");
+      } else {
+        throw new Error("Upload failed: " + (result.error?.message || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Cloud Upload Failed:", err);
+      alert("Cloud Upload Failed: " + err.message + "\nMake sure CLOUDINARY env vars are set properly.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading admin dashboard...</div>;
@@ -441,9 +467,31 @@ export default function AdminDashboard() {
               <label className="input-label">Audio</label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
                 <input type="text" className="input-field" value={newLesson.mediaUrl} onChange={e => setNewLesson({...newLesson, mediaUrl: e.target.value})} placeholder="Audio stream URL or base64" />
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(14, 165, 233, 0.05)', color: 'var(--primary)', padding: '0 16px', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', border: '1px solid var(--border-color)' }}>
-                  <Upload size={14} />
-                  <input type="file" accept="audio/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  background: isUploading ? 'var(--bg-base)' : 'rgba(14, 165, 233, 0.05)', 
+                  color: isUploading ? 'var(--text-muted)' : 'var(--primary)', 
+                  padding: '0 16px', 
+                  borderRadius: '4px', 
+                  fontSize: '0.8rem', 
+                  cursor: isUploading ? 'not-allowed' : 'pointer', 
+                  border: '1px solid var(--border-color)',
+                  opacity: isUploading ? 0.7 : 1
+                }}>
+                  {isUploading ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} />
+                      Upload
+                    </>
+                  )}
+                  <input type="file" accept="audio/*" onChange={handleFileUpload} style={{ display: 'none' }} disabled={isUploading} />
                 </label>
               </div>
             </div>

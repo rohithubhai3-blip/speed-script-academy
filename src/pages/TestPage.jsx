@@ -314,29 +314,6 @@ export default function TestPage() {
 
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
         
-        {/* SPEED SELECTOR - BEFORE START */}
-        {status === "ready" && (
-          <div style={{ marginBottom: '24px', padding: '16px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <label style={{ fontWeight: 600, color: 'var(--primary)' }}>Target Speed: {targetWpm} WPM</label>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Rel. Speed: {(targetWpm/baseWpm).toFixed(2)}x</span>
-            </div>
-            <input 
-              type="range" 
-              min="40" 
-              max="120" 
-              step="5" 
-              value={targetWpm} 
-              onChange={(e) => setTargetWpm(parseInt(e.target.value))}
-              style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              <span>40 WPM</span>
-              <span>80 WPM</span>
-              <span>120 WPM</span>
-            </div>
-          </div>
-        )}
 
         <div style={{ marginBottom: '24px', position: 'relative' }}>
           {status === "running" && (
@@ -344,31 +321,90 @@ export default function TestPage() {
               ref={canvasRef} 
               width="900" 
               height="80" 
-              style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', pointerEvents: 'none', opacity: 0.6 }} 
+              style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', pointerEvents: 'none', opacity: 0.8, filter: 'blur(20px)' }} 
             />
           )}
-          {lesson.mediaType === 'video' ? (
-            <video 
-              ref={mediaRef} 
-              src={lesson.mediaUrl || lesson.audioUrl} 
-              onEnded={handleMediaEnd} 
-              controls={status === 'finished'}
-              style={{ width: '100%', maxHeight: '400px', borderRadius: '8px' }}
-            />
-          ) : (
-            <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <audio 
-                  ref={mediaRef} 
-                  src={lesson.mediaUrl || lesson.audioUrl} 
-                  onEnded={handleMediaEnd} 
-                  controls={true} 
-                  crossOrigin="anonymous"
-                  style={{ width: '100%', height: '32px' }}
-                />
+
+          <div className="premium-player-container" style={{
+            background: 'var(--bg-surface-elevated)',
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            padding: '24px',
+            boxShadow: 'var(--shadow-drop)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '20px'
+          }}>
+            {lesson.mediaType === 'video' ? (
+              <video 
+                ref={mediaRef} 
+                src={lesson.mediaUrl || lesson.audioUrl} 
+                onEnded={handleMediaEnd} 
+                controls={status === 'finished'}
+                style={{ width: '100%', maxHeight: '400px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }}
+              />
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg, var(--primary), var(--accent))',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  color: 'white',
+                  boxShadow: '0 8px 20px rgba(14, 165, 233, 0.3)'
+                }}>
+                  <Music size={32} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Dictation Audio</span>
+                    {status === "running" && <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 'bold' }}>Playing at {targetWpm} WPM</span>}
+                  </div>
+                  <audio 
+                    ref={mediaRef} 
+                    src={lesson.mediaUrl || lesson.audioUrl} 
+                    onEnded={handleMediaEnd} 
+                    controls={true} 
+                    crossOrigin="anonymous"
+                    style={{ width: '100%', height: '36px', filter: 'invert(0.1)' }}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+
+            {/* SPEED CONTROL - NOW INTEGRATED INTO PLAYER */}
+            {status === "ready" && (
+              <div style={{
+                marginTop: '12px',
+                padding: '16px',
+                background: 'var(--bg-base)',
+                borderRadius: '12px',
+                border: '1px dotted var(--border-color)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                     <Settings size={18} className="text-primary" />
+                     <span style={{ fontWeight: 'bold' }}>Select Your Speed</span>
+                   </div>
+                   <div style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                     {targetWpm} WPM
+                   </div>
+                </div>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Slow</span>
+                  <input 
+                    type="range" 
+                    min="40" 
+                    max="140" 
+                    step="5" 
+                    value={targetWpm} 
+                    onChange={(e) => setTargetWpm(parseInt(e.target.value))}
+                    style={{ flex: 1, accentColor: 'var(--primary)', height: '8px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Fast</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         
         {status === "ready" && (
