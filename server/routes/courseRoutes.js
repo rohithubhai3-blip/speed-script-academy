@@ -1,5 +1,4 @@
 import express from 'express';
-import Course from '../models/User.js'; // Wait, wrong model import
 import { protect, adminOnly } from '../middleware/auth.js';
 import CourseModel from '../models/Course.js';
 
