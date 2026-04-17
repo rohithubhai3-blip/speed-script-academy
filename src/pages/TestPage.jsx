@@ -34,6 +34,7 @@ export default function TestPage() {
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const animationRef = useRef(null);
+  const sourceConnectedRef = useRef(false);
 
   useEffect(() => {
     async function load() {
@@ -111,10 +112,8 @@ export default function TestPage() {
 
   const handleStartListening = () => {
     if (mediaRef.current) {
+      // Set rate only, don't re-call .play() inside onPlay event to avoid loops
       mediaRef.current.playbackRate = targetWpm / baseWpm;
-      mediaRef.current.play().catch(err => {
-        console.error("Playback failed:", err);
-      });
       startVisualizer();
     }
   };
@@ -203,13 +202,14 @@ export default function TestPage() {
       const ctx = audioCtxRef.current;
       if (ctx.state === 'suspended') ctx.resume();
 
-      if (!analyserRef.current) {
+      if (!analyserRef.current && !sourceConnectedRef.current) {
         // This is where CORS issues usually happen
         const source = ctx.createMediaElementSource(mediaRef.current);
         analyserRef.current = ctx.createAnalyser();
         analyserRef.current.fftSize = 256;
         source.connect(analyserRef.current);
         analyserRef.current.connect(ctx.destination);
+        sourceConnectedRef.current = true;
       }
 
       draw();
