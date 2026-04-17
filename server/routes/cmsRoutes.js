@@ -5,6 +5,16 @@ import SiteContentModel from '../models/SiteContent.js';
 
 const router = express.Router();
 
+// @route   GET /api/cms
+router.get('/', async (req, res) => {
+  try {
+    const content = await SiteContentModel.findOne({ key: 'main' });
+    res.json(content);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // @route   GET /api/cms/seed (Magic Seed Route)
 router.get('/seed', async (req, res) => {
   try {
