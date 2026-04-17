@@ -252,6 +252,7 @@ export default function AdminDashboard() {
         // Fix: Generate unique ID for the lesson to prevent 500 error
         const lessonWithId = {
           ...newLesson,
+          audioUrl: newLesson.mediaUrl, // Sync for legacy support
           id: newLesson.title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now().toString(36)
         };
         await db.addLesson(activeCourseIdForLesson, activeLevelIdForLesson, lessonWithId);
@@ -626,8 +627,24 @@ export default function AdminDashboard() {
             <div className="input-group">
               <label className="input-label">Audio / Dictation File</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px' }}>
                   <input type="text" className="input-field" value={newLesson.mediaUrl} onChange={e => setNewLesson({...newLesson, mediaUrl: e.target.value})} placeholder="Direct audio URL or upload below..." />
+                  
+                  {/* PREVIEW BUTTON */}
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      if(!newLesson.mediaUrl) return alert("Please enter a link first");
+                      const audio = new Audio(newLesson.mediaUrl);
+                      audio.play().catch(e => alert("Could not play. Link might be broken or private: " + e.message));
+                    }}
+                    className="btn btn-outline"
+                    style={{ padding: '0 12px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)', borderColor: 'var(--primary)', borderStyle: 'dotted' }}
+                    title="Test Audio Link"
+                  >
+                    <PlayCircle size={18} />
+                  </button>
+
                   <label style={{ 
                     display: 'flex', 
                     alignItems: 'center', 

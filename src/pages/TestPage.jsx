@@ -194,6 +194,8 @@ export default function TestPage() {
 
   const startVisualizer = () => {
     try {
+      // Safety check: Visualizer requires CORS. If external link, this MIGHT fail.
+      // We wrap it in try-catch so the AUDIO still plays even if bars don't move.
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
       }
@@ -201,6 +203,7 @@ export default function TestPage() {
       if (ctx.state === 'suspended') ctx.resume();
 
       if (!analyserRef.current) {
+        // This is where CORS issues usually happen
         const source = ctx.createMediaElementSource(mediaRef.current);
         analyserRef.current = ctx.createAnalyser();
         analyserRef.current.fftSize = 256;
@@ -210,7 +213,7 @@ export default function TestPage() {
 
       draw();
     } catch (err) {
-      console.warn("Visualizer failed (likely CORS):", err);
+      console.warn("Visualizer bars disabled due to security/CORS on this link. Audio will still play normally.", err);
     }
   };
 
@@ -367,7 +370,6 @@ export default function TestPage() {
                     src={lesson.mediaUrl || lesson.audioUrl} 
                     onEnded={handleMediaEnd} 
                     controls={true} 
-                    crossOrigin="anonymous"
                     style={{ width: '100%', height: '36px', filter: 'invert(0.1)' }}
                   />
                 </div>
