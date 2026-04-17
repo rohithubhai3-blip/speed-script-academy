@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music } from 'lucide-react';
+import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { analyzeTestResult } from '../utils/engine';
