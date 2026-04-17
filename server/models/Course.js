@@ -12,7 +12,8 @@ const lessonSchema = new mongoose.Schema({
   allowedErrorPercent: { type: Number, default: 5 },
   capRule: { type: String, default: 'Ignore' },
   punctRule: { type: String, default: 'Ignore' },
-  similarWordRule: { type: String, default: 'Strict' }
+  similarWordRule: { type: String, default: 'Strict' },
+  isBackspaceAllowed: { type: Boolean, default: false }
 });
 
 const levelSchema = new mongoose.Schema({

@@ -46,7 +46,8 @@ export default function AdminDashboard() {
     capRule: 'Ignore', 
     punctRule: 'Ignore', 
     similarWordRule: 'Allow (Half Mistake)',
-    baseWpm: 80
+    baseWpm: 80,
+    isBackspaceAllowed: false
   });
 
   const [promos, setPromos] = useState([]);
@@ -186,7 +187,19 @@ export default function AdminDashboard() {
     setEditingLessonConfig({ courseId, levelId, lessonId: lesson.id });
     setActiveCourseIdForLesson(courseId);
     setActiveLevelIdForLesson(levelId);
-    setNewLesson({ ...lesson });
+    setNewLesson({
+      title: lesson.title || '',
+      passage: lesson.passage || '',
+      timeLimit: lesson.timeLimit || '00:05:00',
+      mediaUrl: lesson.mediaUrl || lesson.audioUrl || '',
+      mediaType: lesson.mediaType || 'audio',
+      allowedErrorPercent: lesson.allowedErrorPercent || 5,
+      capRule: lesson.capRule || 'Ignore',
+      punctRule: lesson.punctRule || 'Ignore',
+      similarWordRule: lesson.similarWordRule || 'Strict',
+      baseWpm: lesson.baseWpm || 80,
+      isBackspaceAllowed: lesson.isBackspaceAllowed || false
+    });
   };
 
   const handleUpdateSettings = async (e) => {
@@ -567,6 +580,46 @@ export default function AdminDashboard() {
               <div className="input-group">
                 <label className="input-label">Allowed Error %</label>
                 <input type="number" min="0" max="100" required className="input-field" value={newLesson.allowedErrorPercent} onChange={e => setNewLesson({...newLesson, allowedErrorPercent: parseInt(e.target.value)})} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label">Evaluation Rules</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', background: 'rgba(56,189,248,0.1)', color: 'var(--primary)', border: '1px solid var(--primary)' }}>Cap: {newLesson.capRule}</span>
+                  <span style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', background: 'rgba(56,189,248,0.1)', color: 'var(--primary)', border: '1px solid var(--primary)' }}>Punct: {newLesson.punctRule}</span>
+                  <span style={{ fontSize: '0.75rem', padding: '4px 10px', borderRadius: '4px', background: 'rgba(56,189,248,0.1)', color: 'var(--primary)', border: '1px solid var(--primary)' }}>Errors: {newLesson.allowedErrorPercent}%</span>
+                </div>
+              </div>
+
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label">Core Rules</label>
+                <button 
+                  type="button"
+                  onClick={() => setNewLesson({...newLesson, isBackspaceAllowed: !newLesson.isBackspaceAllowed})}
+                  style={{
+                    width: '100%',
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    background: newLesson.isBackspaceAllowed ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)',
+                    color: newLesson.isBackspaceAllowed ? '#166534' : '#991b1b',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {newLesson.isBackspaceAllowed ? (
+                    <><CheckCircle2 size={18} /> Backspace Allowed</>
+                  ) : (
+                    <><ShieldCheck size={18} /> Backspace Locked</>
+                  )}
+                </button>
               </div>
             </div>
 

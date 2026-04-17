@@ -278,17 +278,20 @@ export default function TestPage() {
 
   const handleKeyDown = (e) => {
     if (e.key === 'Backspace') {
-      const { selectionStart, selectionEnd } = e.target;
-      // If user tries to backspace into locked content
-      if (selectionStart <= lastLockedIndex || selectionEnd <= lastLockedIndex) {
-        e.preventDefault();
-        setShowLockWarning(true);
-        setTimeout(() => setShowLockWarning(false), 2000);
+      // If administrative rule locks backspace (Standard Shorthand Practice)
+      if (!lesson.isBackspaceAllowed) {
+        const { selectionStart, selectionEnd } = e.target;
+        // If user tries to backspace into locked content (past the last space)
+        if (selectionStart <= lastLockedIndex || selectionEnd <= lastLockedIndex) {
+          e.preventDefault();
+          setShowLockWarning(true);
+          setTimeout(() => setShowLockWarning(false), 2000);
+        }
       }
     }
     
-    if (e.key === ' ') {
-      // Lock the word after space
+    if (e.key === ' ' && !lesson.isBackspaceAllowed) {
+      // Lock the word after space ONLY if backspace is restricted
       setLastLockedIndex(typedText.length + 1);
     }
   };
