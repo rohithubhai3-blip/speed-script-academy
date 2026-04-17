@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
+import { storage } from '../firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +15,7 @@ export default function AdminDashboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [globalSettings, setGlobalSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '' });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [siteContent, setSiteContent] = useState(null);
@@ -192,27 +195,36 @@ export default function AdminDashboard() {
 
     try {
       setIsUploading(true);
-      
-      const formData = new FormData();
-      formData.append('file', file);
+      setUploadProgress(0);
 
-      // Upload to our Backend Proxy instead of Cloudinary directly
-      const response = await api.post('/media/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // 1. Create a storage reference
+      const storageRef = ref(storage, `audio/${Date.now()}_${file.name}`);
 
-      const result = response.data;
-      
-      if (result.secure_url) {
-        setNewLesson(prev => ({ ...prev, mediaUrl: result.secure_url }));
-        alert("Audio Uploaded Successfully! (Saved to Cloud)");
-      } else {
-        throw new Error("Upload failed: No URL returned");
-      }
+      // 2. Start the upload task
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // 3. Monitor progress
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(Math.round(progress));
+        }, 
+        (error) => {
+          console.error("Firebase Upload Failed:", error);
+          alert("Upload Failed: " + error.message);
+          setIsUploading(false);
+        }, 
+        async () => {
+          // 4. Handle success
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setNewLesson(prev => ({ ...prev, mediaUrl: downloadURL }));
+          alert("Audio Uploaded Successfully to Firebase! 🚀");
+          setIsUploading(false);
+        }
+      );
     } catch (err) {
-      console.error("Cloud Upload Failed:", err);
-      alert("Cloud Upload Failed: " + (err.response?.data?.message || err.message));
-    } finally {
+      console.error("General Upload Failed:", err);
+      alert("Upload Failed: " + err.message);
       setIsUploading(false);
     }
   };
@@ -452,35 +464,43 @@ export default function AdminDashboard() {
             </div>
 
             <div className="input-group">
-              <label className="input-label">Audio</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
-                <input type="text" className="input-field" value={newLesson.mediaUrl} onChange={e => setNewLesson({...newLesson, mediaUrl: e.target.value})} placeholder="Audio stream URL or base64" />
-                <label style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  background: isUploading ? 'var(--bg-base)' : 'rgba(14, 165, 233, 0.05)', 
-                  color: isUploading ? 'var(--text-muted)' : 'var(--primary)', 
-                  padding: '0 16px', 
-                  borderRadius: '4px', 
-                  fontSize: '0.8rem', 
-                  cursor: isUploading ? 'not-allowed' : 'pointer', 
-                  border: '1px solid var(--border-color)',
-                  opacity: isUploading ? 0.7 : 1
-                }}>
-                  {isUploading ? (
-                    <>
-                      <Loader2 size={14} className="animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={14} />
-                      Upload
-                    </>
-                  )}
-                  <input type="file" accept="audio/*" onChange={handleFileUpload} style={{ display: 'none' }} disabled={isUploading} />
-                </label>
+              <label className="input-label">Audio / Dictation File</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
+                  <input type="text" className="input-field" value={newLesson.mediaUrl} onChange={e => setNewLesson({...newLesson, mediaUrl: e.target.value})} placeholder="Direct audio URL or upload below..." />
+                  <label style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px', 
+                    background: isUploading ? 'var(--bg-base)' : 'rgba(14, 165, 233, 0.05)', 
+                    color: isUploading ? 'var(--text-muted)' : 'var(--primary)', 
+                    padding: '0 20px', 
+                    borderRadius: '8px', 
+                    fontSize: '0.9rem', 
+                    cursor: isUploading ? 'not-allowed' : 'pointer', 
+                    border: '1px solid var(--border-color)',
+                    opacity: isUploading ? 0.7 : 1,
+                    transition: 'all 0.2s'
+                  }}>
+                    {isUploading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        {uploadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        Upload from PC
+                      </>
+                    )}
+                    <input type="file" accept="audio/*,video/*" onChange={handleFileUpload} style={{ display: 'none' }} disabled={isUploading} />
+                  </label>
+                </div>
+                {isUploading && (
+                  <div style={{ width: '100%', height: '6px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ width: `${uploadProgress}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease' }}></div>
+                  </div>
+                )}
               </div>
             </div>
 
