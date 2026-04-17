@@ -135,13 +135,18 @@ export default function TestPage() {
       mediaRef.current.pause();
       mediaRef.current.currentTime = 0; // Reset
     }
-    setStatus("running");
-    setStartTime(Date.now());
+    // Set to ready state - timer won't start until they type first char
+    setStatus("typing_ready");
     
     // Focus typing box after a short delay to allow UI to render
     setTimeout(() => {
       if(textAreaRef.current) textAreaRef.current.focus();
     }, 100);
+  };
+
+  const startTypingTest = () => {
+    setStatus("running");
+    setStartTime(Date.now());
   };
 
   const formatTime = (secs) => {
@@ -396,15 +401,23 @@ export default function TestPage() {
         )}
 
         {/* PHASE 2: TRANSCRIPTION UI */}
-        {(status === "running") && (
+        {(status === "running" || status === "typing_ready") && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'relative' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '12px', border: '1px solid rgba(56, 189, 248, 0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ background: 'var(--primary)', color: 'white', padding: '8px 24px', borderRadius: 'var(--radius-full)', fontWeight: 'bold', fontSize: '1.4rem' }}>
+                <div style={{ 
+                  background: status === "running" ? 'var(--primary)' : 'var(--text-muted)', 
+                  color: 'white', 
+                  padding: '8px 24px', 
+                  borderRadius: 'var(--radius-full)', 
+                  fontWeight: 'bold', 
+                  fontSize: '1.4rem',
+                  transition: 'all 0.3s'
+                }}>
                   {formatTime(timeLeft)}
                 </div>
                 <div style={{ color: 'var(--text-secondary)' }}>
-                  Phase 2: Typing / Transcription
+                  {status === "running" ? "Phase 2: Transcription (Active)" : "Phase 2: Transcription (Ready - Start Typing)"}
                 </div>
               </div>
               <button 
@@ -424,13 +437,25 @@ export default function TestPage() {
             <textarea 
               ref={textAreaRef}
               value={typedText}
-              onChange={(e) => setTypedText(e.target.value)}
+              onChange={(e) => {
+                setTypedText(e.target.value);
+                if (status === "typing_ready" && e.target.value.length > 0) {
+                  startTypingTest();
+                }
+              }}
               onKeyDown={handleKeyDown}
               onPaste={handlePasteDisabled}
               onContextMenu={(e) => e.preventDefault()}
               className="input-field"
-              placeholder="Type your shorthand transcription here..."
-              style={{ minHeight: '400px', resize: 'vertical', fontSize: '1.2rem', lineHeight: 1.8, padding: '24px' }}
+              placeholder={status === "typing_ready" ? "Type your first character to start the timer..." : "Type your shorthand transcription here..."}
+              style={{ 
+                minHeight: '400px', 
+                resize: 'vertical', 
+                fontSize: '1.2rem', 
+                lineHeight: 1.8, 
+                padding: '24px',
+                border: status === 'typing_ready' ? '2px dashed var(--primary)' : '1px solid var(--border-color)'
+              }}
               autoComplete="off"
               spellCheck="false"
             />
