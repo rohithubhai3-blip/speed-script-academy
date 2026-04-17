@@ -13,5 +13,5 @@ const attemptSchema = new mongoose.Schema({
   timestamp: { type: Date, default: Date.now }
 });
 
-const Attempt = mongoose.model('Attempt', attemptSchema);
+const Attempt = mongoose.models.Attempt || mongoose.model('Attempt', attemptSchema);
 export default Attempt;

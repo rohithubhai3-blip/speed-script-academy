@@ -7,5 +7,5 @@ const purchaseRequestSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const PurchaseRequest = mongoose.model('PurchaseRequest', purchaseRequestSchema);
+const PurchaseRequest = mongoose.models.PurchaseRequest || mongoose.model('PurchaseRequest', purchaseRequestSchema);
 export default PurchaseRequest;

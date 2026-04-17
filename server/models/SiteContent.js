@@ -44,5 +44,5 @@ const siteContentSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-const SiteContent = mongoose.model('SiteContent', siteContentSchema);
+const SiteContent = mongoose.models.SiteContent || mongoose.model('SiteContent', siteContentSchema);
 export default SiteContent;

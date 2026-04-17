@@ -28,24 +28,29 @@ const connectDB = async () => {
     throw new Error('Please define the MONGO_URI environment variable');
   }
 
+  // Mongoose 6+ connects with standard defaults (no need for deprecated options)
   const conn = await mongoose.connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    family: 4, // Force IPv4 to avoid ENOTFOUND issues on some networks
+    family: 4, // Force IPv4 to avoid ENOTFOUND issues on Vercel
   });
   
   cachedDb = conn;
   return conn;
 };
 
-// Middleware to ensure DB connection
+// Middleware to ensure DB connection (except for health check)
 app.use(async (req, res, next) => {
+  if (req.path === '/api/health') return next();
   try {
     await connectDB();
     next();
   } catch (err) {
     res.status(500).json({ message: 'Database connection failed', error: err.message });
   }
+});
+
+// Diagnostic Routes
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'UP', timestamp: new Date(), env: process.env.NODE_ENV });
 });
 
 // Routes
