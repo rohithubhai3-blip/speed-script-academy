@@ -112,9 +112,7 @@ export default function TestPage() {
 
   const handleStartListening = () => {
     if (mediaRef.current) {
-      // Set rate only, don't re-call .play() inside onPlay event to avoid loops
       mediaRef.current.playbackRate = targetWpm / baseWpm;
-      startVisualizer();
     }
   };
 
@@ -340,14 +338,6 @@ export default function TestPage() {
                     <h3 style={{ fontSize: '1.2rem', margin: '4px 0' }}>Listen and take notes carefully.</h3>
                   </div>
                 </div>
-
-                {/* VISUALIZER BARS */}
-                <canvas 
-                  ref={canvasRef} 
-                  width="800" 
-                  height="60" 
-                  style={{ width: '100%', borderRadius: '8px', background: 'rgba(0,0,0,0.05)', marginBottom: '16px' }} 
-                />
 
                 <audio 
                   ref={mediaRef} 
