@@ -193,34 +193,25 @@ export default function AdminDashboard() {
     try {
       setIsUploading(true);
       
-      // 1. Get Secure Signature from Backend
-      const { data: sig } = await api.get('/media/signature');
-      
-      // 2. Prepare Form Data for Cloudinary
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('api_key', sig.apiKey);
-      formData.append('timestamp', sig.timestamp);
-      formData.append('signature', sig.signature);
-      formData.append('folder', sig.folder);
 
-      // 3. Upload Directly to Cloudinary
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${sig.cloudName}/upload`, {
-        method: 'POST',
-        body: formData
+      // Upload to our Backend Proxy instead of Cloudinary directly
+      const response = await api.post('/media/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const result = await response.json();
+      const result = response.data;
       
       if (result.secure_url) {
         setNewLesson(prev => ({ ...prev, mediaUrl: result.secure_url }));
-        alert("File Uploaded Successfully to Cloud!");
+        alert("Audio Uploaded Successfully! (Saved to Cloud)");
       } else {
-        throw new Error("Upload failed: " + (result.error?.message || "Unknown error"));
+        throw new Error("Upload failed: No URL returned");
       }
     } catch (err) {
       console.error("Cloud Upload Failed:", err);
-      alert("Cloud Upload Failed: " + err.message + "\nMake sure CLOUDINARY env vars are set properly.");
+      alert("Cloud Upload Failed: " + (err.response?.data?.message || err.message));
     } finally {
       setIsUploading(false);
     }
