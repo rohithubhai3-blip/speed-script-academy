@@ -222,7 +222,7 @@ export default function AdminDashboard() {
       timeLimit: lesson.timeLimit || '00:05:00',
       mediaUrl: lesson.mediaUrl || lesson.audioUrl || '',
       mediaType: lesson.mediaType || 'audio',
-      allowedErrorPercent: lesson.allowedErrorPercent || 5,
+      allowedErrorPercent: lesson.allowedErrorPercent ?? 5,
       capRule: lesson.capRule || 'Ignore',
       punctRule: lesson.punctRule || 'Ignore',
       similarWordRule: lesson.similarWordRule || 'Strict',
@@ -677,7 +677,7 @@ export default function AdminDashboard() {
 
               <div className="input-group">
                 <label className="input-label">Allowed Error %</label>
-                <input type="number" min="0" max="100" required className="input-field" value={newLesson.allowedErrorPercent} onChange={e => setNewLesson({...newLesson, allowedErrorPercent: parseInt(e.target.value)})} />
+                <input type="number" min="0" max="100" required className="input-field" value={newLesson.allowedErrorPercent} onChange={e => { const val = e.target.value; setNewLesson({...newLesson, allowedErrorPercent: val === '' ? 0 : Number(val)}); }} />
               </div>
             </div>
 

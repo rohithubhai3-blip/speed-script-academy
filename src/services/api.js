@@ -31,15 +31,16 @@ const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
 function getCached(key) {
   const entry = cache[key];
   if (!entry) return null;
-  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+  const ttl = entry.ttl ?? CACHE_TTL_MS;
+  if (Date.now() - entry.ts > ttl) {
     delete cache[key];
     return null;
   }
   return entry.data;
 }
 
-function setCache(key, data) {
-  cache[key] = { data, ts: Date.now() };
+function setCache(key, data, ttlMs) {
+  cache[key] = { data, ts: Date.now(), ttl: ttlMs ?? CACHE_TTL_MS };
 }
 
 function clearCache(keyPrefix) {
@@ -109,9 +110,11 @@ export const db = {
     const res = await api.get(`/courses/lesson/${courseId}/${levelId}/${lessonId}`, {
       headers: getAuthHeader()
     });
-    setCache(cacheKey, res.data);
+    // Short TTL for lessons — admin config changes (allowedErrorPercent etc.) must reflect quickly
+    setCache(cacheKey, res.data, 10 * 1000);
     return res.data;
   },
+
 
   // Admin Only
   async addCourse(courseData) {

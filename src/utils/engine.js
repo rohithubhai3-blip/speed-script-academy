@@ -120,7 +120,7 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     similarWordRule: rules?.similarWordRule || 'Allow (Half Mistake)',
     halfMistakeAllowed: rules?.halfMistakeAllowed !== false,
     fullMistakeAllowed: rules?.fullMistakeAllowed !== false,
-    allowedErrorPercent: rules?.allowedErrorPercent || 5,
+    allowedErrorPercent: rules?.allowedErrorPercent ?? 5,
   };
 
   // Normalize similarWordRule

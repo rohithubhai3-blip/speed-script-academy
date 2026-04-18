@@ -196,7 +196,7 @@ export default function TestPage() {
         capRule: lesson.capRule || "Half Mistake",
         punctRule: lesson.punctRule || "Half Mistake",
         similarWordRule: lesson.similarWordRule || "Allow (Half Mistake)",
-        allowedErrorPercent: lesson.allowedErrorPercent || 5,
+        allowedErrorPercent: lesson.allowedErrorPercent ?? 5,
         halfMistakeAllowed: lesson.halfMistakeAllowed !== false,
         fullMistakeAllowed: lesson.fullMistakeAllowed !== false,
       };
@@ -664,10 +664,10 @@ export default function TestPage() {
             </div>
 
             {/* Accuracy */}
-            <div style={{ background: parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))' : 'linear-gradient(135deg, rgba(244,63,94,0.1), rgba(244,63,94,0.03))', border: `2px solid ${parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)'}`, padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
+            <div style={{ background: parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))' : 'linear-gradient(135deg, rgba(244,63,94,0.1), rgba(244,63,94,0.03))', border: `2px solid ${parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? 'var(--success)' : 'var(--danger)'}`, padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>✅ Accuracy</p>
-              <h3 style={{ fontSize: '2.8rem', fontWeight: 800, margin: 0, color: parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)' }}>{result.accuracy}%</h3>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>Required: {100 - (lesson.allowedErrorPercent || 5)}%</p>
+              <h3 style={{ fontSize: '2.8rem', fontWeight: 800, margin: 0, color: parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? 'var(--success)' : 'var(--danger)' }}>{result.accuracy}%</h3>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>Max allowed error: {lesson.allowedErrorPercent ?? 5}%</p>
             </div>
 
             {/* Total Words */}
@@ -709,10 +709,10 @@ export default function TestPage() {
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontWeight: 700, color: parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
-                {parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? '✅ PASSED' : '❌ FAILED'}
+              <div style={{ fontWeight: 700, color: parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
+                {parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? '✅ PASSED' : '❌ FAILED'}
               </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Allowed error: {lesson.allowedErrorPercent || 5}%</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Error: {result.errorPercent}% | Allowed: {lesson.allowedErrorPercent ?? 5}%</div>
             </div>
           </div>
 
