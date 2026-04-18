@@ -200,9 +200,14 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
       continue;
     }
 
-    // 10. Substitution
-    addFull();
-    resultHtmlArray.push({ word: tW, original: oW, type: 'substitution', mistakeClass: 'full' });
+    // 10. SUBSTITUTION (completely different word)
+    // SSC Rule: 2 FULL mistakes total:
+    //   → 1 Full for correct word OMITTED
+    //   → 1 Full for wrong word ADDED
+    addFull();  // missing correct word
+    resultHtmlArray.push({ word: oW, original: oW, type: 'missing', mistakeClass: 'full', note: 'substitution_missing' });
+    addFull();  // extra wrong word typed
+    resultHtmlArray.push({ word: tW, original: oW, type: 'substitution_extra', mistakeClass: 'full', note: 'substitution_extra' });
     i++; j++;
   }
 

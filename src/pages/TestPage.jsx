@@ -774,13 +774,17 @@ export default function TestPage() {
               { color: '#22c55e', label: '✓ Correct' },
               { color: '#ef4444', label: '● Full Mistake (F)' },
               { color: '#f59e0b', label: '◑ Half Mistake (H)' },
-              { color: '#0ea5e9', label: '▽ Omission' },
+              { color: '#0ea5e9', label: '▽ Omission (F)' },
+              { color: '#dc2626', label: '✕ Wrong Word (F×2)' },
             ].map(({ color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
                 <div style={{ width: 12, height: 12, background: color, borderRadius: '2px' }} />
                 {label}
               </div>
             ))}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: '8px', padding: '8px 14px', marginBottom: '16px' }}>
+            ⚠️ <strong>SSC Rule:</strong> Wrong word = <strong>2 Full Mistakes</strong> (1 for omitting correct word + 1 for typing wrong word)
           </div>
 
           <div style={{ 
@@ -799,7 +803,7 @@ export default function TestPage() {
               const isHalf = item.mistakeClass === 'half' || 
                              ['spelling', 'singular_plural', 'capitalization', 'punctuation'].includes(item.type) && item.mistakeClass !== 'full';
               const isFull = item.mistakeClass === 'full' || 
-                             ['substitution', 'extra', 'missing', 'repetition', 'abbreviation'].includes(item.type);
+                             ['substitution', 'substitution_extra', 'extra', 'missing', 'repetition', 'abbreviation'].includes(item.type);
 
               let style = { padding: '3px 7px', borderRadius: '4px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.95rem' };
               let tooltip = '';
@@ -814,6 +818,12 @@ export default function TestPage() {
                   tooltip = `Wrong word — should be "${item.original}" (Full Mistake)`;
                   badge = 'F';
                   break;
+                case 'substitution_extra':
+                  // The wrong word the user actually typed
+                  style = { ...style, background: '#fecaca', color: '#7f1d1d', borderBottom: '2px solid #dc2626', outline: '1px solid #fca5a5' };
+                  tooltip = `Wrong word typed instead of "${item.original}" → +1 Full Mistake (Extra)`;
+                  badge = 'F';
+                  break;
                 case 'extra':
                   style = { ...style, background: '#fee2e2', color: '#991b1b', borderBottom: '2px dashed #ef4444' };
                   tooltip = 'Extra word added (Full Mistake)';
@@ -821,7 +831,9 @@ export default function TestPage() {
                   break;
                 case 'missing':
                   style = { ...style, background: '#e0f2fe', color: '#0369a1', borderBottom: '2px solid #0ea5e9' };
-                  tooltip = 'Word omitted (Full Mistake)';
+                  tooltip = item.note === 'substitution_missing' 
+                    ? `"${item.word}" was omitted → +1 Full Mistake (Missing)` 
+                    : 'Word omitted (Full Mistake)';
                   badge = 'F';
                   break;
                 case 'repetition':
