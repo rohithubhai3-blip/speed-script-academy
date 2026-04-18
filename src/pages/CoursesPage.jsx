@@ -36,7 +36,27 @@ export default function CoursesPage() {
     load();
   }, []);
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading courses...</div>;
+  if (loading) return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '8px 0' }}>
+      {[1, 2].map(i => (
+        <div key={i} className="glass-panel" style={{ padding: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ height: '28px', width: '60%', background: 'rgba(148,163,184,0.15)', borderRadius: '8px', marginBottom: '12px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div style={{ height: '16px', width: '80%', background: 'rgba(148,163,184,0.1)', borderRadius: '6px', animation: 'pulse 1.5s ease-in-out infinite 0.2s' }} />
+            </div>
+            <div style={{ height: '28px', width: '100px', background: 'rgba(148,163,184,0.15)', borderRadius: '20px', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+            {[1, 2, 3].map(j => (
+              <div key={j} style={{ height: '140px', background: 'rgba(148,163,184,0.08)', borderRadius: '12px', animation: `pulse 1.5s ease-in-out infinite ${j * 0.1}s` }} />
+            ))}
+          </div>
+        </div>
+      ))}
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }`}</style>
+    </div>
+  );
 
   return (
     <div>

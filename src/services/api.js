@@ -21,32 +21,79 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// ============================================================
+// IN-MEMORY CACHE — Prevents repeated network calls for the
+// same data within a session or short time window.
+// ============================================================
+const cache = {};
+const CACHE_TTL_MS = 60 * 1000; // 1 minute cache
+
+function getCached(key) {
+  const entry = cache[key];
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) {
+    delete cache[key];
+    return null;
+  }
+  return entry.data;
+}
+
+function setCache(key, data) {
+  cache[key] = { data, ts: Date.now() };
+}
+
+function clearCache(keyPrefix) {
+  Object.keys(cache).forEach(k => {
+    if (!keyPrefix || k.startsWith(keyPrefix)) delete cache[k];
+  });
+}
+
+// ============================================================
+// WARM-UP PING — Called once on app mount to wake up the
+// Vercel serverless function before user navigates to a page
+// ============================================================
+export async function warmupServer() {
+  try {
+    await api.get('/courses');
+  } catch (_) {
+    // Silent — just waking up the server
+  }
+}
+
 export const db = {
   // --- AUTH ---
   async login(email, password) {
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('ssa_user', JSON.stringify(res.data));
+    clearCache();
     return res.data;
   },
 
   async register(email, password, name, secretKey = '') {
     const res = await api.post('/auth/register', { name, email, password, secretKey });
     localStorage.setItem('ssa_user', JSON.stringify(res.data));
+    clearCache();
     return res.data;
   },
 
   async logout() {
     localStorage.removeItem('ssa_user');
+    clearCache();
   },
 
   async getMe() {
+    // Never cache getMe — needs to be fresh for auth checks
     const res = await api.get('/auth/me', { headers: getAuthHeader() });
     return res.data;
   },
 
-  // --- COURSES ---
+  // --- COURSES (CACHED) ---
   async getCourses() {
+    const cacheKey = 'courses';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
     const res = await api.get('/courses');
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
@@ -56,100 +103,106 @@ export const db = {
   },
 
   async getLesson(courseId, levelId, lessonId) {
+    const cacheKey = `lesson:${courseId}:${levelId}:${lessonId}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
     const res = await api.get(`/courses/lesson/${courseId}/${levelId}/${lessonId}`, {
       headers: getAuthHeader()
     });
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   // Admin Only
   async addCourse(courseData) {
-    const res = await api.post('/courses', courseData, {
-      headers: getAuthHeader()
-    });
+    clearCache('courses');
+    const res = await api.post('/courses', courseData, { headers: getAuthHeader() });
     return res.data;
   },
 
   async editCourse(courseId, newData) {
-    const res = await api.put(`/courses/${courseId}`, newData, {
-      headers: getAuthHeader()
-    });
+    clearCache('courses');
+    clearCache('lesson:');
+    const res = await api.put(`/courses/${courseId}`, newData, { headers: getAuthHeader() });
     return res.data;
   },
 
   async deleteCourse(courseId) {
-    const res = await api.delete(`/courses/${courseId}`, {
-      headers: getAuthHeader()
-    });
+    clearCache('courses');
+    const res = await api.delete(`/courses/${courseId}`, { headers: getAuthHeader() });
     return res.data;
   },
 
   // --- RESULTS ---
   async saveAttempt(userId, attemptData) {
-    const res = await api.post('/results/submit', attemptData, {
-      headers: getAuthHeader()
-    });
+    clearCache('results');
+    const res = await api.post('/results/submit', attemptData, { headers: getAuthHeader() });
     return res.data;
   },
 
   async getUserAttempts() {
-    const res = await api.get('/results/my', {
-      headers: getAuthHeader()
-    });
+    const cacheKey = 'results:my';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    const res = await api.get('/results/my', { headers: getAuthHeader() });
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   async getAllAttempts() {
-    const res = await api.get('/results/all', {
-      headers: getAuthHeader()
-    });
+    const cacheKey = 'results:all';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    const res = await api.get('/results/all', { headers: getAuthHeader() });
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   // --- PURCHASE & SETTINGS ---
   async getGlobalSettings() {
+    const cacheKey = 'settings';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
     const res = await api.get('/purchase/settings');
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   async updateGlobalSettings(settings) {
-    const res = await api.post('/purchase/settings', settings, {
-      headers: getAuthHeader()
-    });
+    clearCache('settings');
+    const res = await api.post('/purchase/settings', settings, { headers: getAuthHeader() });
     return res.data;
   },
 
   async submitPurchaseRequest(userId, courseId) {
-    const res = await api.post('/purchase/submit', { courseId }, {
-      headers: getAuthHeader()
-    });
+    clearCache('purchase');
+    const res = await api.post('/purchase/submit', { courseId }, { headers: getAuthHeader() });
     return res.data;
   },
 
   async getPendingRequests() {
     const user = JSON.parse(localStorage.getItem('ssa_user') || '{}');
     const endpoint = user.role === 'admin' ? '/purchase/all' : '/purchase/my';
-    const res = await api.get(endpoint, {
-      headers: getAuthHeader()
-    });
+    const cacheKey = `purchase:${endpoint}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    const res = await api.get(endpoint, { headers: getAuthHeader() });
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   async purchaseCourse(reqId, userId, courseId, durationDays = 0) {
+    clearCache('purchase');
     // Direct approve using the request's _id (MongoDB ObjectId)
     if (reqId) {
-      const res = await api.put(`/purchase/approve/${reqId}`, { durationDays }, {
-        headers: getAuthHeader()
-      });
+      const res = await api.put(`/purchase/approve/${reqId}`, { durationDays }, { headers: getAuthHeader() });
       return res.data;
     }
     // Fallback: search by userId + courseId if no reqId
     const requests = await this.getPendingRequests();
     const req = requests.find(r => (r.userId?._id === userId || r.userId === userId) && r.courseId === courseId);
     if (req) {
-       const res = await api.put(`/purchase/approve/${req._id || req.id}`, { durationDays }, {
-         headers: getAuthHeader()
-       });
+       const res = await api.put(`/purchase/approve/${req._id || req.id}`, { durationDays }, { headers: getAuthHeader() });
        return res.data;
     }
     throw new Error("Request not found");
@@ -164,21 +217,28 @@ export const db = {
 
   // --- ADMIN ONLY ---
   async getAllUsers() {
+    const cacheKey = 'admin:users';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
     const res = await api.get('/auth/users', { headers: getAuthHeader() });
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   async adminCreateUser(email, password, name, role) {
+    clearCache('admin:users');
     const res = await api.post('/auth/admin/create-user', { email, password, name, role }, { headers: getAuthHeader() });
     return res.data;
   },
 
   async deleteUser(userId) {
+    clearCache('admin:users');
     const res = await api.delete(`/auth/${userId}`, { headers: getAuthHeader() });
     return res.data;
   },
 
   async updateUserAccess(userId, purchasedCourses) {
+    clearCache('admin:users');
     const res = await api.put(`/auth/${userId}/access`, { purchasedCourses }, { headers: getAuthHeader() });
     return res.data;
   },
@@ -189,7 +249,6 @@ export const db = {
   },
 
   async getPromos() {
-    // Basic placeholder since we don't have a Promo model yet
     return [];
   },
 
@@ -198,25 +257,32 @@ export const db = {
   },
 
   async addLesson(courseId, levelId, lessonData) {
+    clearCache('courses');
+    clearCache('lesson:');
     const res = await api.post(`/courses/lesson/${courseId}/${levelId}`, lessonData, { headers: getAuthHeader() });
     return res.data;
   },
 
   async editLesson(courseId, levelId, lessonId, lessonData) {
+    clearCache('courses');
+    clearCache(`lesson:${courseId}`);
     const res = await api.put(`/courses/lesson/${courseId}/${levelId}/${lessonId}`, lessonData, { headers: getAuthHeader() });
     return res.data;
   },
 
   // --- CMS ---
   async getSiteContent() {
+    const cacheKey = 'cms';
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
     const res = await api.get('/cms');
+    setCache(cacheKey, res.data);
     return res.data;
   },
 
   async updateSiteContent(data) {
-    const res = await api.post('/cms', data, {
-      headers: getAuthHeader()
-    });
+    clearCache('cms');
+    const res = await api.post('/cms', data, { headers: getAuthHeader() });
     return res.data;
   }
 };

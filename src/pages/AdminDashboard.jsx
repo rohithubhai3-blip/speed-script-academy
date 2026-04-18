@@ -59,13 +59,16 @@ export default function AdminDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const u = await db.getAllUsers();
-      const a = await db.getAllAttempts();
-      const c = await db.getCourses();
-      const p = await db.getPromos();
-      const s = await db.getGlobalSettings();
-      const r = await db.getPendingRequests();
-      const sc = await db.getSiteContent();
+      // Fire ALL requests in parallel — 6× faster than sequential awaits
+      const [u, a, c, p, s, r, sc] = await Promise.all([
+        db.getAllUsers(),
+        db.getAllAttempts(),
+        db.getCourses(),
+        db.getPromos(),
+        db.getGlobalSettings(),
+        db.getPendingRequests(),
+        db.getSiteContent(),
+      ]);
       setUsers(u);
       setAttempts(a);
       setCourses(c);
@@ -79,6 +82,7 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+
 
   useEffect(() => { loadData(); }, []);
 
@@ -350,7 +354,30 @@ export default function AdminDashboard() {
     }
   };
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading admin dashboard...</div>;
+  if (loading) return (
+    <div style={{ padding: '8px 0' }}>
+      <style>{`@keyframes shimmer { 0%,100%{opacity:1} 50%{opacity:0.45} }`}</style>
+      {/* Title skeleton */}
+      <div style={{ height: '40px', width: '280px', background: 'rgba(148,163,184,0.15)', borderRadius: '10px', marginBottom: '12px', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+      <div style={{ height: '16px', width: '200px', background: 'rgba(148,163,184,0.1)', borderRadius: '6px', marginBottom: '28px', animation: 'shimmer 1.5s ease-in-out infinite 0.15s' }} />
+      {/* Tabs skeleton */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
+        {[120, 140, 180, 130, 160, 180, 150].map((w, i) => (
+          <div key={i} style={{ height: '40px', width: `${w}px`, background: 'rgba(148,163,184,0.15)', borderRadius: '8px', animation: `shimmer 1.5s ease-in-out infinite ${i * 0.08}s` }} />
+        ))}
+      </div>
+      {/* Stats cards skeleton */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="glass-panel" style={{ padding: '24px', animation: `shimmer 1.5s ease-in-out infinite ${i * 0.1}s` }}>
+            <div style={{ height: '16px', width: '60%', background: 'rgba(148,163,184,0.15)', borderRadius: '6px', marginBottom: '16px' }} />
+            <div style={{ height: '40px', width: '40%', background: 'rgba(148,163,184,0.2)', borderRadius: '8px' }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
 
   return (
     <div>

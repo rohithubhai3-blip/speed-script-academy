@@ -14,6 +14,7 @@ import ContactPage from './pages/ContactPage';
 import Footer from './components/Footer';
 import useStore from './store/useStore';
 import ErrorBoundary from './components/ErrorBoundary';
+import { warmupServer } from './services/api';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -35,6 +36,12 @@ function App() {
       document.body.classList.remove('dark');
     }
   }, [theme]);
+
+  // Warm up the backend serverless function immediately on app load
+  // so that when user navigates to Dashboard/Courses it loads instantly
+  useEffect(() => {
+    warmupServer();
+  }, []);
 
   return (
     <Router>
