@@ -193,9 +193,12 @@ export default function TestPage() {
       if (timeTakenMin <= 0) timeTakenMin = 0.01;
 
       const rules = {
-        capRule: lesson.capRule || "Ignore",
-        punctRule: lesson.punctRule || "Ignore",
-        similarWordRule: lesson.similarWordRule || "Strict"
+        capRule: lesson.capRule || "Half Mistake",
+        punctRule: lesson.punctRule || "Half Mistake",
+        similarWordRule: lesson.similarWordRule || "Allow (Half Mistake)",
+        allowedErrorPercent: lesson.allowedErrorPercent || 5,
+        halfMistakeAllowed: lesson.halfMistakeAllowed !== false,
+        fullMistakeAllowed: lesson.fullMistakeAllowed !== false,
       };
 
       const analysis = analyzeTestResult(lesson.passage, typedText, timeTakenMin, rules);
@@ -204,8 +207,10 @@ export default function TestPage() {
       const safeResult = {
         ...analysis,
         wpm: analysis.wpm || 0,
-        accuracy: analysis.accuracy || "0.00",
+        accuracy: analysis.accuracy ?? 0,
+        errorPercent: analysis.errorPercent ?? 0,
         totalMistakes: analysis.totalMistakes || 0,
+        errorUnits: analysis.errorUnits || 0,
         fullMistakes: analysis.fullMistakes || 0,
         halfMistakes: analysis.halfMistakes || 0,
         totalWords: analysis.totalWords || 0,
@@ -764,17 +769,25 @@ export default function TestPage() {
           <h3 style={{ marginBottom: '16px', color: 'var(--text-secondary)', fontSize: '1rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Visual Text Analysis</h3>
           
           {/* Mistake Legend */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}><div style={{ width: 12, height: 12, background: '#22c55e', borderRadius: '2px' }}></div> Correct</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}><div style={{ width: 12, height: 12, background: '#ef4444', borderRadius: '2px' }}></div> Mistake / Addition</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}><div style={{ width: 12, height: 12, background: '#0ea5e9', borderRadius: '2px' }}></div> Omission</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+            {[
+              { color: '#22c55e', label: '✓ Correct' },
+              { color: '#ef4444', label: '● Full Mistake (F)' },
+              { color: '#f59e0b', label: '◑ Half Mistake (H)' },
+              { color: '#0ea5e9', label: '▽ Omission' },
+            ].map(({ color, label }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
+                <div style={{ width: 12, height: 12, background: color, borderRadius: '2px' }} />
+                {label}
+              </div>
+            ))}
           </div>
 
           <div style={{ 
             background: '#f8fafc', 
             padding: '24px', 
             borderRadius: 'var(--radius-sm)', 
-            lineHeight: 2.2, 
+            lineHeight: 2.4, 
             border: '1px solid var(--border-color)', 
             color: '#334155',
             display: 'flex',
@@ -782,25 +795,64 @@ export default function TestPage() {
             gap: '8px 4px'
           }}>
             {result.visualHTML.map((item, idx) => {
-              let style = { padding: '4px 8px', borderRadius: '4px', transition: 'all 0.2s', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '4px' };
-              let tooltip = "";
-              let isMistake = item.original && item.type !== 'correct';
-              
+              // Determine if it's a half or full mistake
+              const isHalf = item.mistakeClass === 'half' || 
+                             ['spelling', 'singular_plural', 'capitalization', 'punctuation'].includes(item.type) && item.mistakeClass !== 'full';
+              const isFull = item.mistakeClass === 'full' || 
+                             ['substitution', 'extra', 'missing', 'repetition', 'abbreviation'].includes(item.type);
+
+              let style = { padding: '3px 7px', borderRadius: '4px', fontWeight: '500', display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '0.95rem' };
+              let tooltip = '';
+              let badge = null;
+
               switch(item.type) {
                 case 'correct':
                   style = { ...style, background: '#dcfce7', color: '#166534', borderBottom: '2px solid #22c55e' };
                   break;
-                case 'extra':
                 case 'substitution':
-                case 'spelling':
-                case 'capitalization':
-                case 'punctuation':
                   style = { ...style, background: '#fee2e2', color: '#991b1b', borderBottom: '2px solid #ef4444' };
-                  tooltip = item.type.charAt(0).toUpperCase() + item.type.slice(1) + " Mistake";
+                  tooltip = `Wrong word — should be "${item.original}" (Full Mistake)`;
+                  badge = 'F';
+                  break;
+                case 'extra':
+                  style = { ...style, background: '#fee2e2', color: '#991b1b', borderBottom: '2px dashed #ef4444' };
+                  tooltip = 'Extra word added (Full Mistake)';
+                  badge = 'F';
                   break;
                 case 'missing':
                   style = { ...style, background: '#e0f2fe', color: '#0369a1', borderBottom: '2px solid #0ea5e9' };
-                  tooltip = "Omission (Missing word)";
+                  tooltip = 'Word omitted (Full Mistake)';
+                  badge = 'F';
+                  break;
+                case 'repetition':
+                  style = { ...style, background: '#fce7f3', color: '#9d174d', borderBottom: '2px solid #ec4899' };
+                  tooltip = 'Word repeated (Full Mistake)';
+                  badge = 'F';
+                  break;
+                case 'abbreviation':
+                  style = { ...style, background: '#fef3c7', color: '#78350f', borderBottom: '2px solid #f59e0b' };
+                  tooltip = `Abbreviation mistake — should be "${item.original}" (Full Mistake)`;
+                  badge = 'F';
+                  break;
+                case 'spelling':
+                  style = { ...style, background: isHalf ? '#fef9c3' : '#fee2e2', color: isHalf ? '#713f12' : '#991b1b', borderBottom: `2px solid ${isHalf ? '#eab308' : '#ef4444'}` };
+                  tooltip = `Spelling mistake — should be "${item.original}" (${isHalf ? 'Half' : 'Full'} Mistake)`;
+                  badge = isHalf ? 'H' : 'F';
+                  break;
+                case 'singular_plural':
+                  style = { ...style, background: '#fef9c3', color: '#713f12', borderBottom: '2px solid #eab308' };
+                  tooltip = `Singular/Plural mistake — should be "${item.original}" (Half Mistake)`;
+                  badge = 'H';
+                  break;
+                case 'capitalization':
+                  style = { ...style, background: isHalf ? '#fef9c3' : '#fee2e2', color: isHalf ? '#713f12' : '#991b1b', borderBottom: `2px solid ${isHalf ? '#eab308' : '#ef4444'}` };
+                  tooltip = `Capitalization error — should be "${item.original}" (${isHalf ? 'Half' : 'Full'} Mistake)`;
+                  badge = isHalf ? 'H' : 'F';
+                  break;
+                case 'punctuation':
+                  style = { ...style, background: '#fef9c3', color: '#713f12', borderBottom: '2px solid #eab308' };
+                  tooltip = `Punctuation error — should be "${item.original}" (Half Mistake)`;
+                  badge = 'H';
                   break;
                 default:
                   style = { ...style, opacity: 0.5 };
@@ -809,22 +861,33 @@ export default function TestPage() {
               return (
                 <span key={idx} style={style} title={tooltip}>
                   {item.word}
-                  {isMistake && (
+                  {badge && badge !== '' && (
+                    <sup style={{ 
+                      fontSize: '0.6em', 
+                      fontWeight: 800,
+                      background: badge === 'H' ? '#eab308' : '#ef4444',
+                      color: 'white',
+                      borderRadius: '3px',
+                      padding: '1px 3px',
+                      marginLeft: '2px'
+                    }}>{badge}</sup>
+                  )}
+                  {item.original && item.type !== 'correct' && item.original !== item.word && (
                     <span style={{ 
-                      fontSize: '0.8em', 
-                      opacity: 0.7, 
+                      fontSize: '0.72em', 
+                      opacity: 0.65, 
                       fontWeight: 'normal',
-                      paddingLeft: '4px',
-                      borderLeft: '1px solid rgba(153, 27, 27, 0.2)',
-                      marginLeft: '4px'
+                      paddingLeft: '3px',
+                      marginLeft: '2px'
                     }}>
-                      ({item.original})
+                      ✕{item.original}
                     </span>
                   )}
                 </span>
               );
             })}
           </div>
+
 
           <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
             <button className="btn btn-outline" onClick={handleReset}>
