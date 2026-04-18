@@ -112,7 +112,7 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
 
     // 3. Same base word, differ in punctuation/case
     if (oClean === tClean) {
-      const isCaseDiff = oW.toLowerCase() !== tW.toLowerCase();
+      const isCaseDiff = oW !== tW;  // FIX: oW !== tW is correct since exact match already ruled out
       const oHasStop = hasFullStop(oW), tHasStop = hasFullStop(tW);
 
       if ((oHasStop && !tHasStop) || (!oHasStop && tHasStop)) {

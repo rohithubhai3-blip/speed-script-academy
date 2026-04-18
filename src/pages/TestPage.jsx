@@ -222,16 +222,25 @@ export default function TestPage() {
       setResult(safeResult);
       
       // Secondary fire-and-forget save to database
+      // Clear cached results so dashboard refreshes immediately
       db.saveAttempt(user.id, {
         courseId,
         levelId,
         lessonId,
+        lessonTitle: lesson?.title || '',
         wpm: safeResult.wpm,
         accuracy: safeResult.accuracy,
-        mistakes: safeResult.totalMistakes,
+        errorPercent: safeResult.errorPercent,
+        fullMistakes: safeResult.fullMistakes,
+        halfMistakes: safeResult.halfMistakes,
+        totalWords: safeResult.totalWords,
+        typedWords: safeResult.typedWords,
+        mistakes: safeResult.errorUnits,
+        passed: safeResult.errorPercent <= (lesson?.allowedErrorPercent ?? 5),
         cheatingWarnings: warnings,
         timestamp: new Date().toISOString()
       }).catch(err => console.error("Database save failed:", err));
+
 
       loadAnalytics();
 

@@ -163,30 +163,71 @@ export default function DashboardPage() {
       <div className="glass-card" style={{ padding: '32px' }}>
         <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Recent Attempts</h2>
         {total > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '16px 8px' }}>Date</th>
-                <th style={{ padding: '16px 8px' }}>WPM</th>
-                <th style={{ padding: '16px 8px' }}>Accuracy</th>
-                <th style={{ padding: '16px 8px' }}>Mistakes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {attempts.slice(0, 5).map(a => (
-                <tr key={a.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '16px 8px' }}>{new Date(a.timestamp).toLocaleDateString()}</td>
-                  <td style={{ padding: '16px 8px', fontWeight: 'bold' }}>{a.wpm}</td>
-                  <td style={{ padding: '16px 8px', color: parseFloat(a.accuracy) > 90 ? 'var(--success)' : (parseFloat(a.accuracy) > 70 ? 'var(--warning)' : 'var(--danger)') }}>{a.accuracy}%</td>
-                  <td style={{ padding: '16px 8px' }}>{a.mistakes}</td>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.9rem' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Date</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Lesson</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>WPM</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Accuracy</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Error %</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Full ❌</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Half ⚠️</th>
+                  <th style={{ padding: '14px 10px', fontWeight: 700 }}>Result</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {attempts.slice(0, 20).map((a, idx) => {
+                  const isPassed = a.passed ?? (parseFloat(a.accuracy) >= 95);
+                  return (
+                    <tr key={a._id || idx} style={{ borderBottom: '1px solid rgba(148,163,184,0.08)', transition: 'background 0.15s' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(14,165,233,0.04)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '13px 10px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        {new Date(a.timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      </td>
+                      <td style={{ padding: '13px 10px', fontWeight: 600, maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {a.lessonTitle || a.lessonId || '—'}
+                      </td>
+                      <td style={{ padding: '13px 10px', fontWeight: 700, color: 'var(--primary)' }}>{a.wpm}</td>
+                      <td style={{ padding: '13px 10px', fontWeight: 600, color: parseFloat(a.accuracy) > 90 ? 'var(--success)' : parseFloat(a.accuracy) > 70 ? 'var(--warning)' : 'var(--danger)' }}>
+                        {parseFloat(a.accuracy).toFixed(1)}%
+                      </td>
+                      <td style={{ padding: '13px 10px', color: parseFloat(a.errorPercent) > 5 ? 'var(--danger)' : 'var(--success)' }}>
+                        {a.errorPercent != null ? parseFloat(a.errorPercent).toFixed(2) + '%' : '—'}
+                      </td>
+                      <td style={{ padding: '13px 10px', color: (a.fullMistakes > 0) ? '#ef4444' : 'var(--text-muted)' }}>
+                        {a.fullMistakes ?? '—'}
+                      </td>
+                      <td style={{ padding: '13px 10px', color: (a.halfMistakes > 0) ? '#f59e0b' : 'var(--text-muted)' }}>
+                        {a.halfMistakes ?? '—'}
+                      </td>
+                      <td style={{ padding: '13px 10px' }}>
+                        <span style={{
+                          padding: '4px 10px', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 700,
+                          background: isPassed ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)',
+                          color: isPassed ? 'var(--success)' : 'var(--danger)',
+                          border: `1px solid ${isPassed ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`
+                        }}>
+                          {isPassed ? 'PASS' : 'FAIL'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         ) : (
-          <p style={{ color: 'var(--text-secondary)' }}>No recent attempts found.</p>
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+            <p style={{ marginBottom: '8px' }}>No attempts yet.</p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Complete a test to see your results here.</p>
+          </div>
         )}
       </div>
     </div>
   );
 }
+

@@ -177,7 +177,9 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     // ── 3. SAME BASE (differ only in punctuation/case) ──
     const sameBase = oClean === tClean;
     if (sameBase) {
-      const isCaseDiff  = oW.toLowerCase() !== tW.toLowerCase();
+      // oW !== tW already confirmed (step 1 exact match didn't pass)
+      // Since same base letters, any difference must be case or punctuation
+      const isCaseDiff = oW !== tW;  // FIX: was toLowerCase comparison — wrong for "He" vs "HE"
       const isPunctDiff = !isCaseDiff && oClean === tClean;
 
       // Check: missing/wrong full stop → half mistake
