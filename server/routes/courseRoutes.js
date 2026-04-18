@@ -46,7 +46,7 @@ router.get('/lesson/:courseId/:levelId/:lessonId', protect, async (req, res) => 
       return res.status(404).json({ message: `Lesson "${lessonId}" not found in this level` });
     }
 
-    res.json(lesson);
+    res.json({ course, level, lesson });
   } catch (error) {
     console.error(`[GET_LESSON_ERROR]`, error);
     res.status(500).json({ message: error.message });

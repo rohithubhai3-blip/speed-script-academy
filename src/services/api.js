@@ -135,11 +135,16 @@ export const db = {
     return res.data;
   },
 
-  async purchaseCourse(userId, courseId) {
-    // This is called by Admin to approve a request
-    // We need to find the request ID first or just have a direct endpoint
-    // In our purchaseRoutes, we have approve/:id. 
-    // Let's add a helper to find and approve.
+  async purchaseCourse(reqId, userId, courseId) {
+    // Direct approve using the request's _id (MongoDB ObjectId)
+    // This is much more reliable than searching by userId+courseId
+    if (reqId) {
+      const res = await api.put(`/purchase/approve/${reqId}`, {}, {
+        headers: getAuthHeader()
+      });
+      return res.data;
+    }
+    // Fallback: search by userId + courseId if no reqId
     const requests = await this.getPendingRequests();
     const req = requests.find(r => (r.userId?._id === userId || r.userId === userId) && r.courseId === courseId);
     if (req) {

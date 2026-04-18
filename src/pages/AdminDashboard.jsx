@@ -861,25 +861,29 @@ export default function AdminDashboard() {
                   </tr>
                 ) : (
                   pendingRequests.map(req => {
-                    const student = users.find(u => u.id === req.userId);
+                    // Backend populates userId with {name, email} via .populate()
+                    // So req.userId is an object, not a string ID
+                    const studentName = req.userId?.name || 'Unknown';
+                    const studentEmail = req.userId?.email || '';
+                    const studentId = req.userId?._id || req.userId;
                     const course = courses.find(c => c.id === req.courseId);
                     return (
-                      <tr key={req.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <tr key={req._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                         <td style={{ padding: '16px' }}>
-                          <div style={{ fontWeight: 'bold' }}>{student?.name || 'Unknown'}</div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{student?.email}</div>
+                          <div style={{ fontWeight: 'bold' }}>{studentName}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{studentEmail}</div>
                         </td>
                         <td style={{ padding: '16px' }}>
-                          <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course?.title || 'Unknown Course'}</span>
+                          <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course?.title || req.courseId || 'Unknown Course'}</span>
                         </td>
                         <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
-                          {new Date(req.timestamp).toLocaleString()}
+                          {req.createdAt ? new Date(req.createdAt).toLocaleString() : 'N/A'}
                         </td>
                         <td style={{ padding: '16px', textAlign: 'right' }}>
                           <button 
                             className="btn btn-primary" 
                             style={{ padding: '8px 16px', fontSize: '0.85rem' }}
-                            onClick={() => handleApproveRequest(req.id, req.userId, req.courseId)}
+                            onClick={() => handleApproveRequest(req._id, studentId, req.courseId)}
                           >
                             <CheckCircle2 size={16} /> Approve Access
                           </button>
