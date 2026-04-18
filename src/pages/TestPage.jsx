@@ -122,13 +122,13 @@ export default function TestPage() {
     return () => clearInterval(interval);
   }, [status, countdown]);
 
-  // Playback Rate Effect
+  // Playback Rate Effect — Rule: 60 WPM recorded = 1.00x baseline for all courses
   useEffect(() => {
     if (mediaRef.current && lesson) {
-      const rate = targetWpm / baseWpm;
+      const rate = targetWpm / 60;
       mediaRef.current.playbackRate = rate;
     }
-  }, [targetWpm, baseWpm, lesson]);
+  }, [targetWpm, lesson]);
 
   // Anti-cheat visibility listener
   useEffect(() => {
@@ -148,7 +148,7 @@ export default function TestPage() {
 
   const handleStartListening = () => {
     if (mediaRef.current) {
-      mediaRef.current.playbackRate = targetWpm / baseWpm;
+      mediaRef.current.playbackRate = targetWpm / 60;
     }
   };
 
@@ -480,10 +480,15 @@ export default function TestPage() {
                   ref={mediaRef} 
                   src={lesson.mediaUrl || lesson.audioUrl} 
                   onEnded={handleMediaEnd} 
-                  controls={true}
+                  controls
+                  controlsList="nodownload noremoteplayback"
+                  onContextMenu={(e) => e.preventDefault()}
                   onPlay={handleStartListening}
-                  style={{ width: '100%', height: '40px', filter: 'invert(0.1)' }}
+                  style={{ width: '100%', height: '40px' }}
                 />
+                <p style={{ fontSize: '0.75rem', marginTop: '6px', color: 'var(--primary)', fontWeight: 600 }}>
+                  Current Speed: {(targetWpm / 60).toFixed(2)}x &nbsp;|&nbsp; {targetWpm} WPM
+                </p>
               </div>
 
               {/* SPEED SELECTOR - DROPDOWN UPGRADE */}
