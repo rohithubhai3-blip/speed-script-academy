@@ -213,7 +213,7 @@ export default function AdminDashboard() {
 
   const handleApproveRequest = async (reqId, userId, courseId) => {
     try {
-      await db.purchaseCourse(userId, courseId); // This also removes the request automatically in db.js
+      await db.purchaseCourse(reqId, userId, courseId); // Pass reqId directly to backend
       alert("Course approved and unlocked for user!");
       loadData();
     } catch (err) { alert(err.message); }
