@@ -481,7 +481,8 @@ export default function TestPage() {
                   src={lesson.mediaUrl || lesson.audioUrl} 
                   onEnded={handleMediaEnd} 
                   controls
-                  controlsList="nodownload noremoteplayback"
+                  controlsList="nodownload noremoteplayback nofullscreen"
+                  disablePictureInPicture
                   onContextMenu={(e) => e.preventDefault()}
                   onPlay={handleStartListening}
                   style={{ width: '100%', height: '40px' }}
@@ -491,9 +492,9 @@ export default function TestPage() {
                 </p>
               </div>
 
-              {/* SPEED SELECTOR - DROPDOWN UPGRADE */}
+              {/* SPEED SELECTOR */}
               <div style={{
-                padding: '24px',
+                padding: '20px 24px',
                 background: 'var(--bg-surface-elevated)',
                 borderRadius: '16px',
                 border: '1px solid var(--border-color)',
@@ -504,7 +505,7 @@ export default function TestPage() {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <Settings size={20} style={{ color: 'var(--primary)' }} />
-                  <span style={{ fontWeight: 'bold', fontSize: '1.1rem' }}>Select Dictation Speed</span>
+                  <span style={{ fontWeight: 'bold', fontSize: '1rem' }}>Select Dictation Speed</span>
                 </div>
 
                 <div style={{ position: 'relative', width: '200px' }}>
@@ -540,14 +541,38 @@ export default function TestPage() {
                 </div>
               </div>
 
-              <div style={{ textAlign: 'center', padding: '20px' }}>
-                <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Ready to transcribe? After clicking the button below, the audio will stop and the timer will start.</p>
-                <button className="btn btn-primary" onClick={handleStartTest} style={{ padding: '16px 48px', fontSize: '1.2rem', borderRadius: 'var(--radius-full)' }}>
-                   Start Test
+              {/* START TEST - BIG HIGHLIGHTED BUTTON */}
+              <div style={{ 
+                background: 'rgba(14, 165, 233, 0.04)', 
+                border: '1px dashed rgba(14, 165, 233, 0.35)', 
+                borderRadius: '16px', 
+                padding: '28px 24px', 
+                textAlign: 'center' 
+              }}>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', fontSize: '0.95rem' }}>
+                  🎙️ Finished listening? Click below — the audio will <strong>stop</strong> and the <strong>timer will begin</strong>.
+                </p>
+                <button 
+                  className="btn btn-primary" 
+                  onClick={handleStartTest} 
+                  style={{ 
+                    padding: '18px 64px', 
+                    fontSize: '1.25rem', 
+                    borderRadius: 'var(--radius-full)', 
+                    letterSpacing: '0.5px',
+                    boxShadow: '0 8px 32px rgba(14, 165, 233, 0.35)',
+                    transform: 'scale(1)',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                  ▶ Start Test Now
                 </button>
               </div>
            </div>
         )}
+
 
         {/* PHASE 2: TRANSCRIPTION UI */}
         {(status === "running" || status === "typing_ready") && (
@@ -614,50 +639,78 @@ export default function TestPage() {
 
       {status === "finished" && result && (
         <div className="glass-card" style={{ padding: '32px', animation: 'fadeIn 0.5s ease-out' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', color: 'var(--success)' }}>
-            <CheckCircle size={32} />
-            <h2 style={{ fontSize: '2rem' }}>Test Completed</h2>
-          </div>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-            {/* Primary Metrics */}
-            <div style={{ background: 'rgba(56, 189, 248, 0.05)', border: '2px solid var(--primary)', padding: '24px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 8px 32px rgba(56, 189, 248, 0.1)' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 'bold' }}>Net WPM</p>
-              <h3 style={{ fontSize: '2.5rem', color: 'var(--primary)' }}>{result.wpm}</h3>
-            </div>
-            
-            <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '2px solid var(--success)', padding: '24px', borderRadius: '16px', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 'bold' }}>Accuracy</p>
-              <h3 style={{ fontSize: '2.5rem', color: parseFloat(result.accuracy) > (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)' }}>{result.accuracy}%</h3>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Required: {100 - (lesson.allowedErrorPercent || 5)}%</p>
-            </div>
-
-            <div style={{ background: 'rgba(244, 63, 94, 0.05)', border: '1px solid rgba(244, 63, 94, 0.2)', padding: '24px', borderRadius: '16px', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 'bold' }}>Full Mistakes (F)</p>
-              <h3 style={{ fontSize: '2.5rem', color: 'var(--danger)' }}>{result.fullMistakes}</h3>
-            </div>
-
-            <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '24px', borderRadius: '16px', textAlign: 'center' }}>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 'bold' }}>Half Mistakes (H)</p>
-              <h3 style={{ fontSize: '2.5rem', color: 'var(--warning)' }}>{result.halfMistakes}</h3>
+          {/* RESULT HEADER */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--success)' }}>
+              <CheckCircle size={36} />
+              <div>
+                <h2 style={{ fontSize: '2rem', margin: 0 }}>Test Completed! 🎉</h2>
+                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Here is your detailed performance breakdown</p>
+              </div>
             </div>
           </div>
 
-          {/* Secondary Stats Strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-            <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <span style={{ color: 'var(--text-secondary)' }}>Total Passage Words:</span>
-               <span style={{ fontWeight: 'bold' }}>{result.totalWords}</span>
+          {/* PRIMARY METRICS ROW */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+            {/* Net WPM */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(14,165,233,0.12), rgba(14,165,233,0.04))', border: '2px solid var(--primary)', padding: '24px 16px', borderRadius: '16px', textAlign: 'center', boxShadow: '0 4px 20px rgba(14,165,233,0.15)' }}>
+              <p style={{ color: 'var(--primary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>⚡ Net WPM</p>
+              <h3 style={{ fontSize: '2.8rem', color: 'var(--primary)', fontWeight: 800, margin: 0 }}>{result.wpm}</h3>
             </div>
-            <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <span style={{ color: 'var(--text-secondary)' }}>Total Typed Words:</span>
-               <span style={{ fontWeight: 'bold' }}>{result.typedWords}</span>
+
+            {/* Accuracy */}
+            <div style={{ background: parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))' : 'linear-gradient(135deg, rgba(244,63,94,0.1), rgba(244,63,94,0.03))', border: `2px solid ${parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)'}`, padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>✅ Accuracy</p>
+              <h3 style={{ fontSize: '2.8rem', fontWeight: 800, margin: 0, color: parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)' }}>{result.accuracy}%</h3>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>Required: {100 - (lesson.allowedErrorPercent || 5)}%</p>
             </div>
-            <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-               <span style={{ color: 'var(--text-secondary)' }}>Total Mistake Count:</span>
-               <span style={{ fontWeight: 'bold', color: 'var(--danger)' }}>{result.totalMistakes}</span>
+
+            {/* Total Words */}
+            <div style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.25)', padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>📄 Total Words</p>
+              <h3 style={{ fontSize: '2.8rem', color: '#818cf8', fontWeight: 800, margin: 0 }}>{result.totalWords}</h3>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>In passage</p>
+            </div>
+
+            {/* Typed Words */}
+            <div style={{ background: 'rgba(20,184,166,0.05)', border: '1px solid rgba(20,184,166,0.25)', padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>⌨️ Words Typed</p>
+              <h3 style={{ fontSize: '2.8rem', color: '#2dd4bf', fontWeight: 800, margin: 0 }}>{result.typedWords}</h3>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>By you</p>
+            </div>
+
+            {/* Half Mistakes */}
+            <div style={{ background: 'rgba(245, 158, 11, 0.06)', border: '1px solid rgba(245,158,11,0.3)', padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>🟡 Half Mistakes</p>
+              <h3 style={{ fontSize: '2.8rem', color: 'var(--warning)', fontWeight: 800, margin: 0 }}>{result.halfMistakes}</h3>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>½ mark deduction</p>
+            </div>
+
+            {/* Full Mistakes */}
+            <div style={{ background: 'rgba(244, 63, 94, 0.06)', border: '1px solid rgba(244,63,94,0.25)', padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>🔴 Full Mistakes</p>
+              <h3 style={{ fontSize: '2.8rem', color: 'var(--danger)', fontWeight: 800, margin: 0 }}>{result.fullMistakes}</h3>
+              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>Full mark deduction</p>
             </div>
           </div>
+
+          {/* TOTAL MISTAKES BANNER */}
+          <div style={{ background: result.totalMistakes === 0 ? 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.04))' : 'rgba(244,63,94,0.05)', border: `1px solid ${result.totalMistakes === 0 ? 'var(--success)' : 'rgba(244,63,94,0.3)'}`, borderRadius: '12px', padding: '16px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '1.5rem' }}>{result.totalMistakes === 0 ? '🏆' : '📊'}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '1rem' }}>Total Mistakes: <span style={{ color: result.totalMistakes === 0 ? 'var(--success)' : 'var(--danger)', fontSize: '1.3rem' }}>{result.totalMistakes}</span></div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Full: {result.fullMistakes} × 1 + Half: {result.halfMistakes} × 0.5</div>
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontWeight: 700, color: parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? 'var(--success)' : 'var(--danger)', fontSize: '1.1rem' }}>
+                {parseFloat(result.accuracy) >= (100 - (lesson.allowedErrorPercent || 5)) ? '✅ PASSED' : '❌ FAILED'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Allowed error: {lesson.allowedErrorPercent || 5}%</div>
+            </div>
+          </div>
+
 
           {/* Analytics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '40px' }}>

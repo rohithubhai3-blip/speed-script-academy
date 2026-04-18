@@ -24,7 +24,8 @@ export default function AdminDashboard() {
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
   
   const [editingCourseId, setEditingCourseId] = useState(null);
-  const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0 });
+  const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0, thumbnailUrl: '' });
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   // User Management State
   const [selectedUserForAccess, setSelectedUserForAccess] = useState(null);
@@ -39,7 +40,7 @@ export default function AdminDashboard() {
   const [activeLevelIdForLesson, setActiveLevelIdForLesson] = useState('level-normal');
   const [newLesson, setNewLesson] = useState({
     title: '', 
-    timeLimit: '00:05:00', // HH:MM:SS
+    timeLimit: '00:05:00',
     passage: '', 
     mediaUrl: '', 
     mediaType: 'audio',
@@ -48,7 +49,9 @@ export default function AdminDashboard() {
     punctRule: 'Ignore', 
     similarWordRule: 'Allow (Half Mistake)',
     baseWpm: 80,
-    isBackspaceAllowed: false
+    isBackspaceAllowed: false,
+    halfMistakeAllowed: true,
+    fullMistakeAllowed: true
   });
 
   const [promos, setPromos] = useState([]);
@@ -142,7 +145,6 @@ export default function AdminDashboard() {
         await db.editCourse(editingCourseId, newCourse);
         alert("Course updated!");
       } else {
-        // Fix: Generate a unique ID (slug) because the database requires it
         const courseWithId = { 
           ...newCourse, 
           id: newCourse.title.toLowerCase().replace(/\s+/g, '-') + '-' + Math.random().toString(36).substring(7),
@@ -156,9 +158,31 @@ export default function AdminDashboard() {
         alert("Course created successfully!");
       }
       setEditingCourseId(null);
-      setNewCourse({ title: '', description: '', price: 0 });
+      setNewCourse({ title: '', description: '', price: 0, thumbnailUrl: '' });
       loadData();
     } catch (err) { alert(err.message); }
+  };
+
+  const handleThumbnailUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      setThumbnailUploading(true);
+      const cloudName = 'dnnczci7d';
+      const uploadPreset = 'ssastorage';
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', uploadPreset);
+      const response = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
+      if (response.data.secure_url) {
+        setNewCourse(prev => ({ ...prev, thumbnailUrl: response.data.secure_url }));
+        alert('Thumbnail uploaded! ✅');
+      }
+    } catch (err) {
+      alert('Thumbnail upload failed: ' + err.message);
+    } finally {
+      setThumbnailUploading(false);
+    }
   };
 
   const handleDeleteCourse = async (courseId) => {
@@ -172,7 +196,7 @@ export default function AdminDashboard() {
 
   const startEditCourse = (c) => {
     setEditingCourseId(c.id);
-    setNewCourse({ title: c.title, description: c.description || '', price: c.price || 0 });
+    setNewCourse({ title: c.title, description: c.description || '', price: c.price || 0, thumbnailUrl: c.thumbnailUrl || '' });
   };
 
   const handleGeneratePromo = async (courseId) => {
@@ -199,7 +223,9 @@ export default function AdminDashboard() {
       punctRule: lesson.punctRule || 'Ignore',
       similarWordRule: lesson.similarWordRule || 'Strict',
       baseWpm: lesson.baseWpm || 80,
-      isBackspaceAllowed: lesson.isBackspaceAllowed || false
+      isBackspaceAllowed: lesson.isBackspaceAllowed || false,
+      halfMistakeAllowed: lesson.halfMistakeAllowed !== false,
+      fullMistakeAllowed: lesson.fullMistakeAllowed !== false
     });
   };
 
@@ -488,7 +514,7 @@ export default function AdminDashboard() {
             <form onSubmit={handleSaveCourse} className="glass-panel" style={{ padding: '32px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>{editingCourseId ? 'Edit Course' : 'Add New Course'}</h2>
-                {editingCourseId && <button type="button" onClick={() => { setEditingCourseId(null); setNewCourse({title:'', description:'', price: 0}); }} className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '0.8rem' }}>Cancel</button>}
+                {editingCourseId && <button type="button" onClick={() => { setEditingCourseId(null); setNewCourse({title:'', description:'', price: 0, thumbnailUrl: ''}); }} className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '0.8rem' }}>Cancel</button>}
               </div>
               <div className="input-group">
                 <label className="input-label">Course Title</label>
@@ -502,6 +528,31 @@ export default function AdminDashboard() {
                 <label className="input-label">Price (Set 0 for Free)</label>
                 <input type="number" required min="0" className="input-field" value={newCourse.price} onChange={e => setNewCourse({...newCourse, price: parseInt(e.target.value)})} />
               </div>
+
+              {/* THUMBNAIL UPLOAD */}
+              <div className="input-group">
+                <label className="input-label">Course Thumbnail</label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      className="input-field"
+                      value={newCourse.thumbnailUrl}
+                      onChange={e => setNewCourse({...newCourse, thumbnailUrl: e.target.value})}
+                      placeholder="Paste image URL or upload below..."
+                    />
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginTop: '8px', cursor: thumbnailUploading ? 'not-allowed' : 'pointer', color: 'var(--primary)', fontSize: '0.85rem', opacity: thumbnailUploading ? 0.6 : 1 }}>
+                      <Upload size={14} />
+                      {thumbnailUploading ? 'Uploading...' : 'Upload Image from PC'}
+                      <input type="file" accept="image/*" onChange={handleThumbnailUpload} style={{ display: 'none' }} disabled={thumbnailUploading} />
+                    </label>
+                  </div>
+                  {newCourse.thumbnailUrl && (
+                    <img src={newCourse.thumbnailUrl} alt="Thumbnail Preview" style={{ width: '80px', height: '60px', objectFit: 'cover', borderRadius: '8px', border: '2px solid var(--primary)' }} />
+                  )}
+                </div>
+              </div>
+
               <button type="submit" className={editingCourseId ? "btn btn-primary" : "btn btn-outline"} style={{ width: '100%', marginTop: '16px' }}>
                 <Plus size={18}/> {editingCourseId ? 'Save Course Updates' : 'Create Course Category'}
               </button>
@@ -512,7 +563,10 @@ export default function AdminDashboard() {
               {courses.map(c => (
                 <div key={c.id} style={{ marginBottom: '16px', background: 'var(--bg-base)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ color: 'var(--primary)' }}>{c.title}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      {c.thumbnailUrl && <img src={c.thumbnailUrl} alt="thumb" style={{ width: '44px', height: '36px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />}
+                      <h3 style={{ color: 'var(--primary)' }}>{c.title}</h3>
+                    </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button onClick={() => startEditCourse(c)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Edit Course Info"><Edit3 size={18} /></button>
                       <button onClick={() => handleDeleteCourse(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete Course"><Users size={18} style={{ color: 'var(--danger)' }} /> </button>
@@ -633,6 +687,46 @@ export default function AdminDashboard() {
                   ) : (
                     <><ShieldCheck size={18} /> Backspace Locked</>
                   )}
+                </button>
+              </div>
+            </div>
+
+            {/* MISTAKE POLICY TOGGLES */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '24px' }}>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label">Half Mistake Policy</label>
+                <button
+                  type="button"
+                  onClick={() => setNewLesson({...newLesson, halfMistakeAllowed: !newLesson.halfMistakeAllowed})}
+                  style={{
+                    width: '100%', padding: '10px 16px', borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    background: newLesson.halfMistakeAllowed ? 'rgba(245, 158, 11, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                    color: newLesson.halfMistakeAllowed ? '#92400e' : 'var(--text-muted)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s'
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  {newLesson.halfMistakeAllowed ? 'Half Mistake: ON' : 'Half Mistake: OFF'}
+                </button>
+              </div>
+              <div className="input-group" style={{ marginBottom: 0 }}>
+                <label className="input-label">Full Mistake Policy</label>
+                <button
+                  type="button"
+                  onClick={() => setNewLesson({...newLesson, fullMistakeAllowed: !newLesson.fullMistakeAllowed})}
+                  style={{
+                    width: '100%', padding: '10px 16px', borderRadius: '8px',
+                    border: '1px solid var(--border-color)',
+                    background: newLesson.fullMistakeAllowed ? 'rgba(244, 63, 94, 0.1)' : 'rgba(100, 116, 139, 0.1)',
+                    color: newLesson.fullMistakeAllowed ? '#991b1b' : 'var(--text-muted)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                    cursor: 'pointer', fontWeight: 'bold', transition: 'all 0.2s'
+                  }}
+                >
+                  <CheckCircle2 size={16} />
+                  {newLesson.fullMistakeAllowed ? 'Full Mistake: ON' : 'Full Mistake: OFF'}
                 </button>
               </div>
             </div>
