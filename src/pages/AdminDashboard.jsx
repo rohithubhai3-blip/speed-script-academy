@@ -18,6 +18,7 @@ export default function AdminDashboard() {
   const [globalSettings, setGlobalSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '' });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [siteContent, setSiteContent] = useState(null);
+  const [approvalDurations, setApprovalDurations] = useState({}); // reqId -> durationDays
 
   // Forms states
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -213,8 +214,9 @@ export default function AdminDashboard() {
 
   const handleApproveRequest = async (reqId, userId, courseId) => {
     try {
-      await db.purchaseCourse(reqId, userId, courseId); // Pass reqId directly to backend
-      alert("Course approved and unlocked for user!");
+      const durationDays = approvalDurations[reqId] ?? 0; // 0 = lifetime
+      await db.purchaseCourse(reqId, userId, courseId, durationDays);
+      alert(`Course approved! Access granted ${durationDays > 0 ? `for ${durationDays} days` : 'for lifetime'}.`);
       loadData();
     } catch (err) { alert(err.message); }
   };
@@ -392,35 +394,46 @@ export default function AdminDashboard() {
                     <th style={{ padding: '16px 8px' }}>Name</th>
                     <th style={{ padding: '16px 8px' }}>Email</th>
                     <th style={{ padding: '16px 8px' }}>Role</th>
-                    <th style={{ padding: '16px 8px' }}>Access</th>
+                    <th style={{ padding: '16px 8px' }}>Courses</th>
+                    <th style={{ padding: '16px 8px' }}>Last Login</th>
                     <th style={{ padding: '16px 8px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => (
-                    <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  {users.filter(u => u.role !== 'admin').map(u => (
+                    <tr key={u._id || u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                       <td style={{ padding: '16px 8px', fontWeight: 500 }}>{u.name}</td>
-                      <td style={{ padding: '16px 8px', color: 'var(--text-secondary)' }}>{u.email}</td>
+                      <td style={{ padding: '16px 8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{u.email}</td>
                       <td style={{ padding: '16px 8px' }}>
-                        <span style={{ fontSize: '0.75rem', background: u.role === 'admin' ? 'var(--warning)' : 'rgba(56,189,248,0.2)', color: u.role === 'admin' ? '#000' : 'var(--primary)', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        <span style={{ fontSize: '0.75rem', background: 'rgba(56,189,248,0.2)', color: 'var(--primary)', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                           {u.role}
                         </span>
                       </td>
                       <td style={{ padding: '16px 8px' }}>
-                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                            {u.purchasedCourses?.length > 0 ? (
-                               u.purchasedCourses.map(cid => {
-                                  const c = courses.find(course => course.id === cid);
-                                  return (
-                                     <span key={cid} style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '100px', background: 'var(--bg-base)', border: '1px solid var(--border-color)' }}>
-                                        {c?.title || cid}
-                                     </span>
-                                  )
-                               })
-                            ) : (
-                               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>No Courses</span>
-                            )}
+                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '220px' }}>
+                            {(() => {
+                              // Check both courseAccess (new) and purchasedCourses (legacy)
+                              const accessList = u.courseAccess?.length > 0 ? u.courseAccess : 
+                                (u.purchasedCourses || []).map(id => ({ courseId: id, expiresAt: null }));
+                              if (accessList.length === 0) {
+                                return <span style={{ fontSize: '0.7rem', color: 'var(--danger)', fontWeight: 600 }}>❌ No Courses</span>;
+                              }
+                              return accessList.map((access, i) => {
+                                const courseObj = courses.find(c => c.id === (access.courseId || access));
+                                const isExpired = access.expiresAt && new Date(access.expiresAt) <= new Date();
+                                return (
+                                  <div key={i} style={{ fontSize: '0.65rem', padding: '3px 8px', borderRadius: '100px', background: isExpired ? 'rgba(244,63,94,0.1)' : 'rgba(16,185,129,0.1)', border: `1px solid ${isExpired ? 'var(--danger)' : 'var(--success)'}`, color: isExpired ? 'var(--danger)' : 'var(--success)' }}>
+                                    {courseObj?.title || access.courseId || access}
+                                    {access.expiresAt && <span style={{ opacity: 0.7 }}> · {isExpired ? 'EXPIRED' : `till ${new Date(access.expiresAt).toLocaleDateString()}`}</span>}
+                                    {!access.expiresAt && <span style={{ opacity: 0.7 }}> · ∞</span>}
+                                  </div>
+                                );
+                              });
+                            })()}
                          </div>
+                      </td>
+                      <td style={{ padding: '16px 8px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
                       </td>
                       <td style={{ padding: '16px 8px', textAlign: 'right' }}>
                          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
@@ -851,6 +864,7 @@ export default function AdminDashboard() {
                   <th style={{ padding: '16px' }}>Student</th>
                   <th style={{ padding: '16px' }}>Course</th>
                   <th style={{ padding: '16px' }}>Request Date</th>
+                  <th style={{ padding: '16px' }}>Duration</th>
                   <th style={{ padding: '16px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -862,11 +876,11 @@ export default function AdminDashboard() {
                 ) : (
                   pendingRequests.map(req => {
                     // Backend populates userId with {name, email} via .populate()
-                    // So req.userId is an object, not a string ID
                     const studentName = req.userId?.name || 'Unknown';
                     const studentEmail = req.userId?.email || '';
                     const studentId = req.userId?._id || req.userId;
                     const course = courses.find(c => c.id === req.courseId);
+                    const currentDuration = approvalDurations[req._id] ?? 0;
                     return (
                       <tr key={req._id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                         <td style={{ padding: '16px' }}>
@@ -879,13 +893,28 @@ export default function AdminDashboard() {
                         <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
                           {req.createdAt ? new Date(req.createdAt).toLocaleString() : 'N/A'}
                         </td>
+                        <td style={{ padding: '16px' }}>
+                          <select
+                            value={currentDuration}
+                            onChange={e => setApprovalDurations(prev => ({ ...prev, [req._id]: parseInt(e.target.value) }))}
+                            className="input-field"
+                            style={{ padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem', minWidth: '150px', marginBottom: '0' }}
+                          >
+                            <option value={0}>♾️ Lifetime</option>
+                            <option value={30}>📅 30 Days</option>
+                            <option value={60}>📅 60 Days</option>
+                            <option value={90}>📅 90 Days (3M)</option>
+                            <option value={180}>📅 6 Months</option>
+                            <option value={365}>📅 1 Year</option>
+                          </select>
+                        </td>
                         <td style={{ padding: '16px', textAlign: 'right' }}>
                           <button 
                             className="btn btn-primary" 
                             style={{ padding: '8px 16px', fontSize: '0.85rem' }}
                             onClick={() => handleApproveRequest(req._id, studentId, req.courseId)}
                           >
-                            <CheckCircle2 size={16} /> Approve Access
+                            <CheckCircle2 size={16} /> Approve
                           </button>
                         </td>
                       </tr>

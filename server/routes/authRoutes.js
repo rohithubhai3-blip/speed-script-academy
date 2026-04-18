@@ -66,12 +66,17 @@ router.post('/login', async (req, res) => {
   try {
     const user = await User.findOne({ email });
     if (user && (await user.comparePassword(password))) {
+      // Update last login timestamp
+      user.lastLogin = new Date();
+      await user.save();
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
         purchasedCourses: user.purchasedCourses || [],
+        courseAccess: user.courseAccess || [],
+        lastLogin: user.lastLogin,
         token: generateToken(user._id)
       });
     } else {
@@ -169,7 +174,9 @@ router.get('/me', protect, async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      purchasedCourses: user.purchasedCourses || []
+      purchasedCourses: user.purchasedCourses || [],
+      courseAccess: user.courseAccess || [],
+      lastLogin: user.lastLogin,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

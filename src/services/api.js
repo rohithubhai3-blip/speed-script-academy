@@ -135,11 +135,10 @@ export const db = {
     return res.data;
   },
 
-  async purchaseCourse(reqId, userId, courseId) {
+  async purchaseCourse(reqId, userId, courseId, durationDays = 0) {
     // Direct approve using the request's _id (MongoDB ObjectId)
-    // This is much more reliable than searching by userId+courseId
     if (reqId) {
-      const res = await api.put(`/purchase/approve/${reqId}`, {}, {
+      const res = await api.put(`/purchase/approve/${reqId}`, { durationDays }, {
         headers: getAuthHeader()
       });
       return res.data;
@@ -148,7 +147,7 @@ export const db = {
     const requests = await this.getPendingRequests();
     const req = requests.find(r => (r.userId?._id === userId || r.userId === userId) && r.courseId === courseId);
     if (req) {
-       const res = await api.put(`/purchase/approve/${req._id || req.id}`, {}, {
+       const res = await api.put(`/purchase/approve/${req._id || req.id}`, { durationDays }, {
          headers: getAuthHeader()
        });
        return res.data;

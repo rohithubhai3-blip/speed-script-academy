@@ -25,12 +25,17 @@ router.get('/lesson/:courseId/:levelId/:lessonId', protect, async (req, res) => 
       return res.status(404).json({ message: `Course "${courseId}" not found` });
     }
 
-    // Check if user has purchased this course, if it's a demo, or if it's free
-    const isPurchased = req.user.purchasedCourses?.includes(courseId);
-    const isDemo = course.title.toLowerCase().includes('demo');
+    // Check if user has active access to this course
     const isFree = course.price === 0;
+    const isDemo = course.title.toLowerCase().includes('demo');
+    const hasPaidAccess = req.user.hasCourseAccess ? req.user.hasCourseAccess(courseId) : (req.user.purchasedCourses?.includes(courseId));
 
-    if (!isPurchased && !isDemo && !isFree && req.user.role !== 'admin') {
+    if (!hasPaidAccess && !isDemo && !isFree && req.user.role !== 'admin') {
+      // Check specifically if the access EXPIRED
+      const expiredAccess = req.user.courseAccess?.find(a => a.courseId === courseId && a.expiresAt && new Date(a.expiresAt) <= new Date());
+      if (expiredAccess) {
+        return res.status(403).json({ message: `Your access to this course expired on ${new Date(expiredAccess.expiresAt).toDateString()}. Please renew to continue.` });
+      }
       return res.status(403).json({ message: 'Course not purchased. Please check out first.' });
     }
 
