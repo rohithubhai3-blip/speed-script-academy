@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { LogOut, LayoutDashboard, FileText, Settings, User, Sun, Moon } from 'lucide-react';
+import { LogOut, LayoutDashboard, FileText, Settings, User, Sun, Moon, BookOpen } from 'lucide-react';
 import useStore from '../store/useStore';
 
 export default function Navbar() {
@@ -36,6 +36,13 @@ export default function Navbar() {
               Dashboard
             </Link>
             
+            {user.role !== 'admin' && (
+              <Link to="/dashboard#library" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: location.hash === '#library' ? 'var(--primary)' : 'var(--text-secondary)', transition: 'color 0.2s', fontWeight: 500 }}>
+                <BookOpen size={18} />
+                My Courses
+              </Link>
+            )}
+
             {!isActive('/test') && (
               <Link to="/courses" style={{ display: 'flex', alignItems: 'center', gap: '6px', color: isActive('/courses') ? 'var(--primary)' : 'var(--text-secondary)', transition: 'color 0.2s', fontWeight: 500 }}>
                 <FileText size={18} />

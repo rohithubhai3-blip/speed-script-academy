@@ -27,6 +27,10 @@ export default function TestPage() {
   
   const [countdown, setCountdown] = useState(0);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [course, setCourse] = useState(null);
+  const [level, setLevel] = useState(null);
   
   const mediaRef = useRef(null);
   const textAreaRef = useRef(null);
@@ -38,37 +42,56 @@ export default function TestPage() {
 
   useEffect(() => {
     async function load() {
-      const data = await db.getLesson(courseId, levelId, lessonId);
-      if (!data) return navigate('/courses');
-      setLesson(data);
-      
-      // Robust time limit parser
-      let secs = 300;
+      setLoading(true);
+      setError(null);
       try {
-        if (data.timeLimit && typeof data.timeLimit === 'string') {
-          const parts = data.timeLimit.split(':').map(val => parseInt(val) || 0);
+        const data = await db.getLesson(courseId, levelId, lessonId);
+        if (!data || !data.lesson) {
+          setError("Lesson not found.");
+          return;
+        }
+
+        setLesson(data.lesson);
+        setCourse(data.course);
+        setLevel(data.level);
+
+        // Robust time limit parser
+        let secs = 300;
+        const lessonData = data.lesson;
+        if (lessonData.timeLimit && typeof lessonData.timeLimit === 'string') {
+          const parts = lessonData.timeLimit.split(':').map(val => parseInt(val) || 0);
           if (parts.length === 3) {
             secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
           } else if (parts.length === 2) {
             secs = parts[0] * 60 + parts[1];
           } else if (parts.length === 1) {
-            secs = parts[0] * 60; // Assume as minutes if single number string
+            secs = parts[0] * 60;
           }
-        } else if (data.timeMinutes) {
-          secs = parseInt(data.timeMinutes) * 60;
+        } else if (lessonData.timeMinutes) {
+          secs = parseInt(lessonData.timeMinutes) * 60;
         }
-      } catch (e) {
-        console.warn("Time parsing error, using default 5m", e);
-        secs = 300;
-      }
 
-      if (!secs || isNaN(secs) || secs < 0) secs = 300;
-      setTimeLeft(secs);
-      
-      // Initialize WPM
-      const bw = data.baseWpm || 80;
-      setBaseWpm(bw);
-      setTargetWpm(bw);
+        if (!secs || isNaN(secs) || secs < 0) secs = 300;
+        setTimeLeft(secs);
+        
+        // Initialize WPM
+        const bw = lessonData.baseWpm || 80;
+        setBaseWpm(bw);
+        setTargetWpm(bw);
+
+        // Load analytics for this lesson
+        loadAnalytics();
+
+      } catch (err) {
+        console.error('Error loading lesson:', err);
+        if (err.response?.status === 403) {
+          setError("Access Restricted: You need to purchase this course to access this lesson.");
+        } else {
+          setError("Failed to load lesson data. Please try again later.");
+        }
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, [courseId, levelId, lessonId, navigate]);
@@ -225,21 +248,48 @@ export default function TestPage() {
   };
 
   const loadAnalytics = async () => {
-    const all = await db.getAllAttempts();
-    const lessonAttempts = all.filter(a => a.lessonId === lessonId);
-    
-    const users = await db.getAllUsers();
-    const withNames = lessonAttempts.map(a => ({
-      ...a,
-      userName: users.find(u => u.id === a.userId)?.name || "Guest"
-    }));
-    
-    const top = withNames.sort((a,b) => b.wpm - a.wpm || b.accuracy - a.accuracy).slice(0, 5);
-    setLeaderboard(top);
+    try {
+      // PERMISSION CHECK: Normal users cannot call db.getAllAttempts()
+      let all = [];
+      if (user.role === 'admin') {
+        all = await db.getAllAttempts().catch(() => []);
+      } else {
+        all = await db.getUserAttempts(user.id).catch(() => []);
+      }
 
-    const myHistory = await db.getUserAttempts(user.id);
-    const lessonHistory = myHistory.filter(a => a.lessonId === lessonId).reverse();
-    setHistory(lessonHistory);
+      if (!Array.isArray(all)) all = [];
+      const lessonAttempts = all.filter(a => a && a.lessonId === lessonId);
+      
+      let users = [];
+      if (user.role === 'admin') {
+        users = await db.getAllUsers().catch(() => []);
+      } else {
+        // Students don't need all user names for history, only their own
+        users = [user]; 
+      }
+      
+      if (!Array.isArray(users)) users = [];
+
+      const withNames = lessonAttempts.map(a => ({
+        ...a,
+        userName: users.find(u => u && u.id === (a.userId?._id || a.userId))?.name || "Student"
+      }));
+      
+      const sortedHistory = [...withNames].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+      setHistory(sortedHistory);
+
+      const top = [...withNames]
+        .filter(a => a.wpm && !isNaN(a.wpm))
+        .sort((a,b) => b.wpm - a.wpm || b.accuracy - a.accuracy)
+        .slice(0, 5);
+      setLeaderboard(top);
+
+    } catch (err) {
+      console.error("Analytics Load Failure:", err);
+      // Fallback to empty states to prevent component crash
+      setHistory([]);
+      setLeaderboard([]);
+    }
   };
 
   const startVisualizer = () => {
@@ -350,7 +400,42 @@ export default function TestPage() {
     }
   };
 
-  if (!lesson) return <div style={{ padding: '40px', textAlign: 'center' }}>Loading test environment...</div>;
+  if (loading) {
+    return (
+      <div style={{ padding: '100px 40px', textAlign: 'center', background: 'var(--bg-surface)', borderRadius: '24px', margin: '40px auto', maxWidth: '600px', border: '1px solid var(--border-color)' }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ width: '40px', height: '40px', border: '4px solid var(--primary)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }}></div>
+        </div>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Configuring Test Environment</h2>
+        <p style={{ color: 'var(--text-secondary)' }}>Preparing dictation audio and transcription rules...</p>
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '60px 40px', textAlign: 'center', background: 'var(--bg-surface)', borderRadius: '24px', margin: '40px auto', maxWidth: '600px', border: '1px solid var(--danger-subtle, #fee2e2)' }}>
+        <div style={{ color: 'var(--danger)', marginBottom: '20px' }}>
+          <ShieldAlert size={64} style={{ margin: '0 auto' }} />
+        </div>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--danger)', marginBottom: '16px' }}>Access Restricted</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '1.1rem', lineHeight: '1.6' }}>{error}</p>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <button className="btn btn-primary" onClick={() => navigate('/courses')} style={{ padding: '12px 32px' }}>
+            Browse Courses
+          </button>
+          <button className="btn" onClick={() => navigate(-1)} style={{ padding: '12px 32px', border: '1px solid var(--border-color)' }}>
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!lesson) return null;
 
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', paddingBottom: '40px' }}>
@@ -733,6 +818,12 @@ export default function TestPage() {
           }}>
             {countdown === 0 ? "!" : countdown}
           </div>
+          <div style={{ fontWeight: '600' }}>
+            {countdown === 0 ? "GO! Start Typing" : `Prepare... Dictation starts in ${countdown}s`}
+          </div>
+        </div>
+      )}
+
       {status === "finished" && result && result.rules && (
         <div className="glass-panel" style={{ padding: '24px', marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
           <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>Exam Configuration & Rules Applied</h4>
@@ -776,6 +867,10 @@ export default function TestPage() {
         @keyframes slideInTop {
           from { transform: translate(-50%, -40px); opacity: 0; }
           to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
         }
       `}} />
     </div>

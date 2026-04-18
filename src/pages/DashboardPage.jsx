@@ -8,13 +8,23 @@ import { Link } from 'react-router-dom';
 export default function DashboardPage() {
   const user = useStore(state => state.user);
   const [attempts, setAttempts] = useState([]);
+  const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
-      const data = await db.getUserAttempts(user.id);
-      setAttempts(data);
-      setLoading(false);
+      try {
+        const [attemptsData, coursesData] = await Promise.all([
+          db.getUserAttempts(user.id),
+          db.getCourses()
+        ]);
+        setAttempts(attemptsData);
+        setCourses(coursesData);
+      } catch (err) {
+        console.error("Dashboard Load Error:", err);
+      } finally {
+        setLoading(false);
+      }
     }
     loadData();
   }, [user.id]);
@@ -109,7 +119,7 @@ export default function DashboardPage() {
           )}
         </div>
 
-        <div className="glass-card" style={{ padding: '32px' }}>
+        <div id="library" className="glass-card" style={{ padding: '32px' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>My Library</h2>
           {(!user?.purchasedCourses || user.purchasedCourses.length === 0) ? (
             <div style={{ textAlign: 'center', border: '1px solid rgba(255,255,255,0.1)', padding: '32px', borderRadius: '8px' }}>
@@ -117,13 +127,34 @@ export default function DashboardPage() {
               <Link to="/courses" className="btn btn-outline" style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}>Browse Catalog</Link>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '350px', overflowY: 'auto' }}>
-              {user.purchasedCourses.map((id, idx) => (
-                <div key={idx} style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontWeight: 'bold', color: 'var(--primary)' }}>Purchased Course ID: {id}</div>
-                  <Link to="/courses" className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>View</Link>
-                </div>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '420px', overflowY: 'auto', paddingRight: '8px' }}>
+              {user.purchasedCourses.map((id, idx) => {
+                const course = courses.find(c => c.id === id || c._id === id);
+                return (
+                  <div key={idx} style={{ 
+                    background: 'rgba(255,255,255,0.02)', 
+                    padding: '20px', 
+                    borderRadius: '16px', 
+                    border: '1px solid var(--border-color)', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    transition: 'transform 0.2s',
+                  }}>
+                    <div>
+                      <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.1rem', marginBottom: '4px' }}>
+                        {course?.title || `Course ${id}`}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        Status: <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>Unlocked</span>
+                      </div>
+                    </div>
+                    <Link to={course ? `/courses` : "/courses"} className="btn btn-primary" style={{ padding: '8px 20px', fontSize: '0.9rem', borderRadius: 'var(--radius-full)' }}>
+                      Practice
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

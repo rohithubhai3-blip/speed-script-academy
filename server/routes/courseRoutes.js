@@ -25,11 +25,12 @@ router.get('/lesson/:courseId/:levelId/:lessonId', protect, async (req, res) => 
       return res.status(404).json({ message: `Course "${courseId}" not found` });
     }
 
-    // Check if user has purchased this course OR if it's a demo
+    // Check if user has purchased this course, if it's a demo, or if it's free
     const isPurchased = req.user.purchasedCourses?.includes(courseId);
     const isDemo = course.title.toLowerCase().includes('demo');
+    const isFree = course.price === 0;
 
-    if (!isPurchased && !isDemo && req.user.role !== 'admin') {
+    if (!isPurchased && !isDemo && !isFree && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Course not purchased. Please check out first.' });
     }
 
