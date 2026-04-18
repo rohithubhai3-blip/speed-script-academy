@@ -302,7 +302,10 @@ export default function AdminDashboard() {
         capRule: 'Ignore', 
         punctRule: 'Ignore', 
         similarWordRule: 'Allow (Half Mistake)',
-        baseWpm: 80
+        baseWpm: 80,
+        isBackspaceAllowed: false,
+        halfMistakeAllowed: true,
+        fullMistakeAllowed: true
       });
       loadData();
     } catch (err) { 
@@ -634,7 +637,7 @@ export default function AdminDashboard() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', fontFamily: 'var(--font-heading)' }}>{editingLessonConfig ? 'Edit Test' : 'Create Test'}</h2>
-              {editingLessonConfig && <button type="button" onClick={() => { setEditingLessonConfig(null); setNewLesson({ title: '', timeLimit: '00:05:00', passage: '', mediaUrl: '', mediaType: 'audio', allowedErrorPercent: 5, capRule: 'Ignore', punctRule: 'Ignore', similarWordRule: 'Allow (Half Mistake)', baseWpm: 80 }); }} className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '0.8rem' }}>Cancel</button>}
+              {editingLessonConfig && <button type="button" onClick={() => { setEditingLessonConfig(null); setNewLesson({ title: '', timeLimit: '00:05:00', passage: '', mediaUrl: '', mediaType: 'audio', allowedErrorPercent: 5, capRule: 'Ignore', punctRule: 'Ignore', similarWordRule: 'Allow (Half Mistake)', baseWpm: 80, isBackspaceAllowed: false, halfMistakeAllowed: true, fullMistakeAllowed: true }); }} className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '0.8rem' }}>Cancel</button>}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

@@ -174,8 +174,8 @@ export default function CoursesPage() {
 
               {/* ── THUMBNAIL ── */}
               <div className="thumbnail-wrap" style={{ background: fallbackBg }}>
-                {course.thumbnailUrl ? (
-                  <img src={course.thumbnailUrl} alt={course.title} className="thumbnail-img" />
+                {(course.thumbnailUrl || course.thumbnail) ? (
+                  <img src={course.thumbnailUrl || course.thumbnail} alt={course.title} className="thumbnail-img" />
                 ) : (
                   // Decorative SVG pattern when no thumbnail
                   <div style={{
