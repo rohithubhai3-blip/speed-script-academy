@@ -1,69 +1,96 @@
 <div align="center">
 
-# ⚡ SPEED SCRIPT ACADEMY ⚡
-### *The Ultimate Stenography Mastery Platform*
+# 🌊 SPEED SCRIPT ACADEMY
+### *Professional Stenography Testing Platform*
 
 [![Status](https://img.shields.io/badge/Status-Live-success?style=for-the-badge&logo=vercel)](https://speed-script-academy.vercel.app)
 [![Tech](https://img.shields.io/badge/Stack-MERN-blue?style=for-the-badge&logo=mongodb)](https://github.com/rohithubhai3-blip)
-[![MadeBy](https://img.shields.io/badge/Made%20With-❤️-red?style=for-the-badge)](https://github.com/rohithubhai3-blip)
+[![GitHub Stars](https://img.shields.io/github/stars/rohithubhai3-blip/speed-script-academy?style=for-the-badge)](https://github.com/rohithubhai3-blip/speed-script-academy)
+[![GitHub Forks](https://img.shields.io/github/forks/rohithubhai3-blip/speed-script-academy?style=for-the-badge)](https://github.com/rohithubhai3-blip/speed-script-academy)
 
 ---
 
 ```text
-  _____                      _    _____           _       _     
- / ____|                    | |  / ____|         (_)     | |    
-| (___  _ __   ___  ___   __| | | (___   ___ _ __ _ _ __ | |_   
- \___ \| '_ \ / _ \/ _ \ / _` |  \___ \ / __| '__| | '_ \| __|  
- ____) | |_) |  __/  __/| (_| |  ____) | (__| |  | | |_) | |_   
-|_____/| .__/ \___|\___| \__,_| |_____/ \___|_|  |_| .__/ \__|  
-       | |                                         | |          
-       |_|                                         |_|          
+  ____                      _    ____             _       _   
+ / ___| _ __   ___  ___  __| |  / ___|  ___ _ __(_)_ __ | |_ 
+ \___ \| '_ \ / _ \/ _ \/ _` |  \___ \ / __| '__| | '_ \| __|
+  ___) | |_) |  __/  __/ (_| |   ___) | (__| |  | | |_) | |_ 
+ |____/| .__/ \___|\___|\__,_|  |____/ \___|_|  |_| .__/ \__|
+       |_|                                        |_|         
 
-                ✨ B Y  R O H I T ✨
+     _                         _                           
+    / \   ___  __ _  __| | ___ _ __ ___  _   _ 
+   / _ \ / __|/ _` |/ _` |/ _ \ '_ ` _ \| | | |
+  / ___ \ (__| (_| | (_| |  __/ | | | | | |_| |
+ /_/   \_\___|\__,_|\__,_|\___|_| |_| |_|\__, |
+                                         |___/ 
 
+       ✨ BY ROHIT & THAKUR MANINDER ✨
+```
 
-Speed Script Academy is not just a typing tool; it's a precision engine built for those who treat Stenography as an art. Designed to mirror the official SSC (Staff Selection Commission) environment.
+---
 
-🚀 Why Speed Script Academy?
-🎯 Official SSC Evaluation Logic
-Precision Tracking: Word-by-word comparison using advanced algorithms.
-Error Breakdown: Automatically detects Full Mistakes (Omissions, Substitutions, Additions) and Half Mistakes (Spelling, Case, Punctuation).
-Penalty Rules: Strictly adheres to the official ((Full + Half/2) * 100) / Total formula.
-🎙️ Smart Dictation Experience
-Dynamic WPM: Change playback speed on the fly (60 to 130+ WPM).
-Media Security: Protected audio/video players to prevent content theft.
-Zero Latency: Parallel fetching and in-memory caching for an ultra-fast experience.
-📊 Professional Analytics Folder
-Visual Trends: Interactive line charts to see your speed grow.
-Mistake Mapping: Every single error is color-coded in your result page so you know exactly where to improve.
-Test History: Secure database storage for all your attempts.
-🛠️ The Power Under The Hood
-Technology	Usage
-React 18	Ultra-responsive UI with Glassmorthic design
-Node / Express	Robust backend handling complex calculations
-MongoDB Atlas	Secure, scalable cloud data storage
-Recharts	Visualizing your success via analytics
-Lucide	Clean, minimalist iconography
-👨‍💻 Meet The Architect
-"Architecture is not just about buildings, it's about building solutions."
+**Speed Script Academy (SSA)** is a premium steno-practice ecosystem. It mirrors the exact conditions of national competitive exams like the **SSC (Staff Selection Commission)**, providing real-time evaluation with official mistake formats.
 
-        I am ROHIT — A developer on a mission to 
-        democratize high-quality steno education.
+</div>
 
+---
 
-# React + Vite
+## 🚀 Top-Tier Features
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+### ⚖️ Official Evaluation Engine
+| Feature | Details |
+| :--- | :--- |
+| **Strict Compliance** | Word-by-word comparison using modern distance algorithms. |
+| **Mistake Logic** | Detects **Full Mistakes** and **Half Mistakes** per official guidelines. |
+| **Pass/Fail Logic** | Live accuracy percentage checking against allowed threshold. |
 
-Currently, two official plugins are available:
+### 🎧 High-Performance Dictation
+- **Dynamic Speed Tuning**: Audio playback adapts to your target WPM.
+- **Media Encryption**: Backend verification ensures content remains exclusive and secure.
+- **Low Latency**: Optimized API calls with in-memory caching for a "Native App" feel.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### 📉 Progressive Analytics
+- **Visual Growth**: Recharts-powered graphs to track your speed improvement.
+- **Interactive Results**: Every test produces a visual map of mistakes with detailed tooltips.
+- **Personal Library**: Keep track of every attempt you've ever made.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🧬 Project Architecture
 
-## Expanding the ESLint configuration
+- **Frontend**: `React 18` + `Vite` for blazing fast performance.
+- **Backend**: `Node.js` + `Express` serving a secure REST API.
+- **Database**: `MongoDB Atlas` for rock-solid cloud data persistence.
+- **Evaluation**: Custom-built `SSC Engine` in Javascript.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## 👨‍💻 Behind the Project
+
+> "Our goal is to make professional coaching accessible to every single steno aspirant."
+
+We are **ROHIT** & **THAKUR MANINDER**, developers who love building products with high impact and beautiful design. SSA was created to bridge the gap between simple typing tests and official exam environments.
+
+---
+
+## 🛠️ How to Get Started
+1. **Choose a Course**: Select from 60, 80, 100, or 120 WPM tracks.
+2. **Take the Test**: Listen to the dictation and transcribe in real-time.
+3. **Review**: Get instant feedback with a breakdown of error points.
+4. **Excel**: Repeat and watch your accuracy reach 100%.
+
+---
+
+## 🛡️ License & Copyright
+© 2026 ROHIT & THAKUR MANINDER. All rights reserved. 
+This project is for educational and training purposes. Redirection or duplication of property without permission is not allowed.
+
+---
+<div align="center">
+  <b>Designed for Speed. Built for Accuracy.</b>
+  <br/>
+  <i>Crafted with ❤️ by ROHIT & THAKUR MANINDER.</i>
+</div>
+```
+
