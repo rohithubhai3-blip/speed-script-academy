@@ -29,7 +29,10 @@ export default function AdminDashboard() {
 
   // User Management State
   const [selectedUserForAccess, setSelectedUserForAccess] = useState(null);
-  const [userAccessForm, setUserAccessForm] = useState([]); // Array of course IDs
+  const [userCourseAccess, setUserCourseAccess] = useState([]); // [{courseId, expiresAt}]
+  const [accessGrantCourseId, setAccessGrantCourseId] = useState('');
+  const [accessGrantDays, setAccessGrantDays] = useState('lifetime'); // 'lifetime' | '30' | '90' | '180' | '365'
+  const [userAccessForm, setUserAccessForm] = useState([]); // legacy fallback
 
   const [selectedUserForPasswordReset, setSelectedUserForPasswordReset] = useState(null);
   const [newPasswordValue, setNewPasswordValue] = useState('');
@@ -108,7 +111,44 @@ export default function AdminDashboard() {
 
   const openAccessModal = (user) => {
     setSelectedUserForAccess(user);
-    setUserAccessForm(user.purchasedCourses || []);
+    // Build unified access list from courseAccess (new) + purchasedCourses (legacy)
+    const existing = user.courseAccess?.length > 0
+      ? user.courseAccess
+      : (user.purchasedCourses || []).map(id => ({ courseId: id, expiresAt: null }));
+    setUserCourseAccess(existing);
+    setAccessGrantCourseId('');
+    setAccessGrantDays('lifetime');
+  };
+
+  const handleGrantAccess = async () => {
+    if (!accessGrantCourseId) return alert('Please select a course first.');
+    // Build expiresAt from duration
+    let expiresAt = null;
+    if (accessGrantDays !== 'lifetime') {
+      const d = new Date();
+      d.setDate(d.getDate() + parseInt(accessGrantDays));
+      expiresAt = d.toISOString();
+    }
+    // Remove existing entry for same course (will re-add with new expiry)
+    const filtered = userCourseAccess.filter(a => a.courseId !== accessGrantCourseId);
+    const updated = [...filtered, { courseId: accessGrantCourseId, expiresAt }];
+    setUserCourseAccess(updated);
+    try {
+      await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, updated);
+      alert('✅ Access granted!');
+      loadData();
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleRevokeAccess = async (courseId) => {
+    if (!window.confirm('Remove this course from the user?')) return;
+    const updated = userCourseAccess.filter(a => a.courseId !== courseId);
+    setUserCourseAccess(updated);
+    try {
+      await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, updated);
+      alert('Course access revoked.');
+      loadData();
+    } catch (err) { alert(err.message); }
   };
 
   const openResetModal = (user) => {
@@ -440,98 +480,168 @@ export default function AdminDashboard() {
 
       {/* USERS TAB */}
       {activeTab === 'users' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '24px' }}>
-          <div className="glass-panel" style={{ padding: '32px' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Registered Users</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '24px' }}>
+          {/* USER TABLE */}
+          <div className="glass-panel" style={{ padding: '32px', gridColumn: '1 / -1' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+              <h2 style={{ fontSize: '1.5rem' }}>All Accounts ({users.length})</h2>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <span style={{ fontSize: '0.78rem', padding: '4px 12px', borderRadius: '100px', background: 'rgba(245,158,11,0.15)', color: 'var(--warning)', border: '1px solid var(--warning)', fontWeight: 700 }}>
+                  👑 {users.filter(u => u.role === 'admin').length} Admin{users.filter(u => u.role === 'admin').length !== 1 ? 's' : ''}
+                </span>
+                <span style={{ fontSize: '0.78rem', padding: '4px 12px', borderRadius: '100px', background: 'rgba(14,165,233,0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', fontWeight: 700 }}>
+                  👤 {users.filter(u => u.role !== 'admin').length} Students
+                </span>
+              </div>
+            </div>
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                    <th style={{ padding: '16px 8px' }}>Name</th>
-                    <th style={{ padding: '16px 8px' }}>Email</th>
-                    <th style={{ padding: '16px 8px' }}>Role</th>
-                    <th style={{ padding: '16px 8px' }}>Courses</th>
-                    <th style={{ padding: '16px 8px' }}>Last Login</th>
-                    <th style={{ padding: '16px 8px', textAlign: 'right' }}>Actions</th>
+                  <tr style={{ background: 'var(--bg-surface-elevated)', fontSize: '0.82rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <th style={{ padding: '12px 16px', borderRadius: '8px 0 0 8px' }}>Name / Role</th>
+                    <th style={{ padding: '12px 16px' }}>Email</th>
+                    <th style={{ padding: '12px 16px' }}>Course Access</th>
+                    <th style={{ padding: '12px 16px' }}>Last Login</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right', borderRadius: '0 8px 8px 0' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.filter(u => u.role !== 'admin').map(u => (
-                    <tr key={u._id || u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '16px 8px', fontWeight: 500 }}>{u.name}</td>
-                      <td style={{ padding: '16px 8px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{u.email}</td>
-                      <td style={{ padding: '16px 8px' }}>
-                        <span style={{ fontSize: '0.75rem', background: 'rgba(56,189,248,0.2)', color: 'var(--primary)', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px 8px' }}>
-                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', maxWidth: '220px' }}>
-                            {(() => {
-                              // Check both courseAccess (new) and purchasedCourses (legacy)
-                              const accessList = u.courseAccess?.length > 0 ? u.courseAccess : 
-                                (u.purchasedCourses || []).map(id => ({ courseId: id, expiresAt: null }));
-                              if (accessList.length === 0) {
-                                return <span style={{ fontSize: '0.7rem', color: 'var(--danger)', fontWeight: 600 }}>❌ No Courses</span>;
-                              }
-                              return accessList.map((access, i) => {
-                                const courseObj = courses.find(c => c.id === (access.courseId || access));
-                                const isExpired = access.expiresAt && new Date(access.expiresAt) <= new Date();
+                  {users.map(u => {
+                    const isAdmin = u.role === 'admin';
+                    // Unified access list
+                    const accessList = u.courseAccess?.length > 0
+                      ? u.courseAccess
+                      : (u.purchasedCourses || []).map(id => ({ courseId: id, expiresAt: null }));
+
+                    return (
+                      <tr key={u._id || u.id} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.15s' }}
+                         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-surface-elevated)'}
+                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+
+                        {/* Name + Badge */}
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '34px', height: '34px', flexShrink: 0,
+                              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: isAdmin
+                                ? 'linear-gradient(135deg, var(--warning), #f97316)'
+                                : 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                              color: 'white', fontWeight: 800, fontSize: '0.85rem'
+                            }}>
+                              {u.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{u.name}</span>
+                                {isAdmin && (
+                                  <span style={{ fontSize: '0.58rem', background: 'linear-gradient(135deg, var(--warning), #f97316)', color: 'white', padding: '2px 7px', borderRadius: '100px', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase' }}>ADMIN</span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>
+                                {new Date(u.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Email */}
+                        <td style={{ padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '0.84rem' }}>{u.email}</td>
+
+                        {/* Course Access */}
+                        <td style={{ padding: '14px 16px' }}>
+                          {isAdmin ? (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>All Access</span>
+                          ) : accessList.length === 0 ? (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>No courses</span>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              {accessList.map((a, i) => {
+                                const courseObj = courses.find(c => c.id === a.courseId);
+                                const isExpired = a.expiresAt && new Date(a.expiresAt) <= new Date();
+                                const daysLeft = a.expiresAt
+                                  ? Math.max(0, Math.ceil((new Date(a.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
+                                  : null;
                                 return (
-                                  <div key={i} style={{ fontSize: '0.65rem', padding: '3px 8px', borderRadius: '100px', background: isExpired ? 'rgba(244,63,94,0.1)' : 'rgba(16,185,129,0.1)', border: `1px solid ${isExpired ? 'var(--danger)' : 'var(--success)'}`, color: isExpired ? 'var(--danger)' : 'var(--success)' }}>
-                                    {courseObj?.title || access.courseId || access}
-                                    {access.expiresAt && <span style={{ opacity: 0.7 }}> · {isExpired ? 'EXPIRED' : `till ${new Date(access.expiresAt).toLocaleDateString()}`}</span>}
-                                    {!access.expiresAt && <span style={{ opacity: 0.7 }}> · ∞</span>}
+                                  <div key={i} style={{
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    fontSize: '0.72rem', padding: '3px 8px', borderRadius: '100px',
+                                    background: isExpired ? 'rgba(244,63,94,0.08)' : 'rgba(16,185,129,0.08)',
+                                    border: `1px solid ${isExpired ? 'var(--danger)' : 'var(--success)'}`,
+                                    color: isExpired ? 'var(--danger)' : 'var(--success)',
+                                    width: 'fit-content'
+                                  }}>
+                                    {courseObj?.title || a.courseId}
+                                    <span style={{ opacity: 0.75 }}>
+                                      {a.expiresAt
+                                        ? isExpired ? '· EXPIRED' : `· ${daysLeft}d left`
+                                        : '· ∞'}
+                                    </span>
                                   </div>
                                 );
-                              });
-                            })()}
-                         </div>
-                      </td>
-                      <td style={{ padding: '16px 8px', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : 'Never'}
-                      </td>
-                      <td style={{ padding: '16px 8px', textAlign: 'right' }}>
-                         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => openResetModal(u)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer' }} title="Reset Password"><Key size={18} /></button>
-                            <button onClick={() => openAccessModal(u)} style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer' }} title="Manage Access"><ShieldCheck size={18} /></button>
-                            <button onClick={() => handleDeleteUser(u._id || u.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete User"><Trash2 size={18} /></button>
-                         </div>
-                      </td>
-                    </tr>
-                  ))}
+                              })}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Last Login */}
+                        <td style={{ padding: '14px 16px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                          {u.lastLogin ? new Date(u.lastLogin).toLocaleString() : '—'}
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => openResetModal(u)}
+                              style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '6px', color: 'var(--warning)', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}
+                              title="Reset Password">
+                              <Key size={15} />
+                            </button>
+                            {!isAdmin && (
+                              <button onClick={() => openAccessModal(u)}
+                                style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '6px', color: 'var(--primary)', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}
+                                title="Manage Course Access">
+                                <ShieldCheck size={15} />
+                              </button>
+                            )}
+                            <button onClick={() => handleDeleteUser(u._id || u.id)}
+                              style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '6px', color: 'var(--danger)', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}
+                              title="Delete Account">
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
+          {/* CREATE USER FORM */}
           <form onSubmit={handleCreateUser} className="glass-panel" style={{ padding: '32px', alignSelf: 'start' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Add New User</h2>
-            
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Add New Account</h2>
             <div className="input-group">
               <label className="input-label">Full Name</label>
-              <input type="text" required className="input-field" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} />
+              <input type="text" required className="input-field" value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} placeholder="Student Name" />
             </div>
-            
             <div className="input-group">
               <label className="input-label">Email</label>
               <input type="email" required className="input-field" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} />
             </div>
-
             <div className="input-group">
               <label className="input-label">Password</label>
               <input type="text" required className="input-field" value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} />
             </div>
-
             <div className="input-group">
               <label className="input-label">Role</label>
               <select className="input-field" value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})}>
-                <option value="user">User</option>
+                <option value="user">Student</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}><Plus size={18}/> Create User</button>
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '16px' }}><Plus size={18}/> Create Account</button>
           </form>
         </div>
       )}
@@ -1148,38 +1258,87 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ACCESS CONTROL MODAL */}
+      {/* ACCESS CONTROL MODAL — UPGRADED */}
       {selectedUserForAccess && (
-         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(8px)' }}>
-            <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '32px', position: 'relative' }}>
-               <button onClick={() => setSelectedUserForAccess(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24}/></button>
-               
-               <h2 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Manage Access</h2>
-               <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Updating permissions for <strong>{selectedUserForAccess.name}</strong></p>
-               
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto', paddingRight: '10px' }}>
-                  {courses.map(c => (
-                     <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: 'var(--bg-base)', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', border: userAccessForm.includes(c.id) ? '1px solid var(--primary)' : '1px solid transparent' }}>
-                        <input 
-                           type="checkbox" 
-                           checked={userAccessForm.includes(c.id)} 
-                           onChange={() => toggleCourseInAccessForm(c.id)}
-                           style={{ width: '18px', height: '18px' }}
-                        />
-                        <div style={{ flex: 1 }}>
-                           <p style={{ fontWeight: 600, margin: 0 }}>{c.title}</p>
-                           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>{c.id}</p>
-                        </div>
-                     </label>
-                  ))}
-               </div>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', backdropFilter: 'blur(10px)' }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '560px', padding: '32px', position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+            <button onClick={() => setSelectedUserForAccess(null)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={22}/></button>
 
-               <div style={{ marginTop: '24px', display: 'flex', gap: '12px' }}>
-                  <button onClick={handleUpdateAccess} className="btn btn-primary" style={{ flex: 1 }}>Apply Changes</button>
-                  <button onClick={() => setSelectedUserForAccess(null)} className="btn btn-outline" style={{ flex: 1 }}>Cancel</button>
-               </div>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '24px' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '1.1rem' }}>
+                {selectedUserForAccess.name?.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h2 style={{ fontSize: '1.3rem' }}>Manage Course Access</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{selectedUserForAccess.name} · {selectedUserForAccess.email}</p>
+              </div>
             </div>
-         </div>
+
+            {/* Currently Active Courses */}
+            <div style={{ marginBottom: '24px' }}>
+              <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' }}>Current Access</h4>
+              {userCourseAccess.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>No courses granted yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {userCourseAccess.map((a, i) => {
+                    const courseObj = courses.find(c => c.id === a.courseId);
+                    const isExpired = a.expiresAt && new Date(a.expiresAt) <= new Date();
+                    const daysLeft = a.expiresAt
+                      ? Math.max(0, Math.ceil((new Date(a.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
+                      : null;
+                    return (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderRadius: '8px', background: isExpired ? 'rgba(244,63,94,0.07)' : 'rgba(16,185,129,0.07)', border: `1px solid ${isExpired ? 'var(--danger)' : 'var(--success)'}30` }}>
+                        <div>
+                          <p style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '2px' }}>{courseObj?.title || a.courseId}</p>
+                          <p style={{ fontSize: '0.72rem', color: isExpired ? 'var(--danger)' : 'var(--success)' }}>
+                            {a.expiresAt
+                              ? isExpired
+                                ? `⚠️ Expired on ${new Date(a.expiresAt).toLocaleDateString()}`
+                                : `✅ ${daysLeft} days left · till ${new Date(a.expiresAt).toLocaleDateString()}`
+                              : '✅ Lifetime Access (∞)'}
+                          </p>
+                        </div>
+                        <button onClick={() => handleRevokeAccess(a.courseId)}
+                          style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid var(--danger)', borderRadius: '6px', color: 'var(--danger)', cursor: 'pointer', padding: '5px 10px', fontSize: '0.75rem', fontWeight: 700 }}>
+                          Revoke
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div style={{ height: '1px', background: 'var(--border-color)', margin: '20px 0' }} />
+
+            {/* Grant New Access */}
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '16px' }}>Grant / Renew Access</h4>
+            <div className="input-group">
+              <label className="input-label">Select Course</label>
+              <select className="input-field" value={accessGrantCourseId} onChange={e => setAccessGrantCourseId(e.target.value)}>
+                <option value="">-- Choose a course --</option>
+                {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </div>
+            <div className="input-group">
+              <label className="input-label">Duration</label>
+              <select className="input-field" value={accessGrantDays} onChange={e => setAccessGrantDays(e.target.value)}>
+                <option value="lifetime">♾️ Lifetime (No Expiry)</option>
+                <option value="30">📅 1 Month (30 days)</option>
+                <option value="90">📅 3 Months (90 days)</option>
+                <option value="180">📅 6 Months (180 days)</option>
+                <option value="365">📅 1 Year (365 days)</option>
+              </select>
+            </div>
+            <button onClick={handleGrantAccess} className="btn btn-primary" style={{ width: '100%', marginTop: '4px' }}>
+              <Zap size={16} /> Grant Access
+            </button>
+
+            <button onClick={() => setSelectedUserForAccess(null)} className="btn btn-outline" style={{ width: '100%', marginTop: '12px' }}>Close</button>
+          </div>
+        </div>
       )}
 
       {/* PASSWORD RESET MODAL */}

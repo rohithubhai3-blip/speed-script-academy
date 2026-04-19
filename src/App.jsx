@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import AdminRegisterPage from './pages/AdminRegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import CoursesPage from './pages/CoursesPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -54,6 +55,8 @@ function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                {/* Secret admin registration — not linked anywhere public */}
+                <Route path="/ssa-admin-init" element={<AdminRegisterPage />} />
                 
                 <Route path="/dashboard" element={
                   <ProtectedRoute>

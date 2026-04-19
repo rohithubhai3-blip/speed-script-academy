@@ -132,15 +132,24 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
 
 // @route   PUT /api/auth/:id/access (Admin Only)
 router.put('/:id/access', protect, adminOnly, async (req, res) => {
-  const { purchasedCourses } = req.body;
+  const { purchasedCourses, courseAccess } = req.body;
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.purchasedCourses = purchasedCourses;
+    if (courseAccess !== undefined) {
+      // New system: save courseAccess array [{courseId, expiresAt}]
+      user.courseAccess = courseAccess;
+      // Also sync legacy purchasedCourses for backward compatibility
+      user.purchasedCourses = courseAccess.map(a => a.courseId);
+    } else if (purchasedCourses !== undefined) {
+      // Legacy: plain array of course IDs (treat as lifetime)
+      user.purchasedCourses = purchasedCourses;
+      user.courseAccess = purchasedCourses.map(id => ({ courseId: id, expiresAt: null }));
+    }
+
     await user.save();
-    
-    res.json({ message: 'User access updated', purchasedCourses: user.purchasedCourses });
+    res.json({ message: 'User access updated', courseAccess: user.courseAccess, purchasedCourses: user.purchasedCourses });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

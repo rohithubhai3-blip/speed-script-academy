@@ -240,9 +240,10 @@ export const db = {
     return res.data;
   },
 
-  async updateUserAccess(userId, purchasedCourses) {
+  async updateUserAccess(userId, courseAccess) {
     clearCache('admin:users');
-    const res = await api.put(`/auth/${userId}/access`, { purchasedCourses }, { headers: getAuthHeader() });
+    // courseAccess = [{courseId, expiresAt}]
+    const res = await api.put(`/auth/${userId}/access`, { courseAccess }, { headers: getAuthHeader() });
     return res.data;
   },
 
