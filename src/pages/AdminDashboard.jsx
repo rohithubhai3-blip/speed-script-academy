@@ -182,8 +182,24 @@ export default function AdminDashboard() {
     } catch (err) { alert(err.message); }
   };
 
+  const handleImpersonate = async (userId) => {
+    if (!window.confirm("Log into this user's account? Your current session will be replaced.")) return;
+    try {
+      const response = await api.post(`/auth/impersonate/${userId}`);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data));
+        window.location.href = '/dashboard';
+      }
+    } catch (err) {
+      alert("Impersonation failed: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+
   const handleSaveCourse = async (e) => {
     e.preventDefault();
+
     try {
       if (editingCourseId) {
         await db.editCourse(editingCourseId, newCourse);
@@ -597,6 +613,11 @@ export default function AdminDashboard() {
                               title="Reset Password">
                               <Key size={15} />
                             </button>
+                            <button onClick={() => handleImpersonate(u._id || u.id)}
+                              style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '6px', color: 'var(--primary)', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}
+                              title="Login as User">
+                              <Zap size={15} />
+                            </button>
                             {!isAdmin && (
                               <button onClick={() => openAccessModal(u)}
                                 style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '6px', color: 'var(--primary)', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}
@@ -604,6 +625,7 @@ export default function AdminDashboard() {
                                 <ShieldCheck size={15} />
                               </button>
                             )}
+
                             <button onClick={() => handleDeleteUser(u._id || u.id)}
                               style={{ background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.3)', borderRadius: '6px', color: 'var(--danger)', cursor: 'pointer', padding: '6px 8px', display: 'flex', alignItems: 'center' }}
                               title="Delete Account">

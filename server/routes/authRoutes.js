@@ -192,4 +192,27 @@ router.get('/me', protect, async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/impersonate/:id (Admin Only)
+router.post('/impersonate/:id', protect, adminOnly, async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    console.log(`[AUTH] Admin ${req.user.email} is impersonating ${user.email}`);
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      purchasedCourses: user.purchasedCourses || [],
+      courseAccess: user.courseAccess || [],
+      lastLogin: user.lastLogin,
+      token: generateToken(user._id)
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
