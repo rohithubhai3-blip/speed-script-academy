@@ -187,14 +187,18 @@ export default function AdminDashboard() {
     try {
       const response = await api.post(`/auth/impersonate/${userId}`);
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data));
+        // Update local storage using the correct app key: ssa_user
+        // The store reads from 'ssa_user', so we must save the full response there.
+        localStorage.setItem('ssa_user', JSON.stringify(response.data));
+        
+        // Force refresh to reload the entire app with the new user session
         window.location.href = '/dashboard';
       }
     } catch (err) {
       alert("Impersonation failed: " + (err.response?.data?.message || err.message));
     }
   };
+
 
 
   const handleSaveCourse = async (e) => {
