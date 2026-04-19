@@ -54,49 +54,49 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-        <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)' }}>
-            <Hash size={28} className="text-primary" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+        <div className="glass-card" style={{ padding: '22px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '14px', borderRadius: 'var(--radius-full)' }}>
+            <Hash size={26} className="text-primary" />
           </div>
           <div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Total Tests</p>
-            <h3 style={{ fontSize: '2rem' }}>{total}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Tests</p>
+            <h3 style={{ fontSize: '1.8rem', lineHeight: 1 }}>{total}</h3>
           </div>
         </div>
         
-        <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(45, 212, 191, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--accent)' }}>
-            <TrendingUp size={28} />
+        <div className="glass-card" style={{ padding: '22px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: 'rgba(45, 212, 191, 0.1)', padding: '14px', borderRadius: 'var(--radius-full)', color: 'var(--accent)' }}>
+            <TrendingUp size={26} />
           </div>
           <div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Average WPM</p>
-            <h3 style={{ fontSize: '2rem' }}>{avgWPM}</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg WPM</p>
+            <h3 style={{ fontSize: '1.8rem', lineHeight: 1 }}>{avgWPM}</h3>
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(129, 140, 248, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--secondary)' }}>
-            <Target size={28} />
+        <div className="glass-card" style={{ padding: '22px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: 'rgba(129, 140, 248, 0.1)', padding: '14px', borderRadius: 'var(--radius-full)', color: 'var(--secondary)' }}>
+            <Target size={26} />
           </div>
           <div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Avg Accuracy</p>
-            <h3 style={{ fontSize: '2rem' }}>{avgAcc}%</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Avg Accuracy</p>
+            <h3 style={{ fontSize: '1.8rem', lineHeight: 1 }}>{avgAcc}%</h3>
           </div>
         </div>
 
-        <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--warning)' }}>
-            <Award size={28} />
+        <div className="glass-card" style={{ padding: '22px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '14px', borderRadius: 'var(--radius-full)', color: 'var(--warning)' }}>
+            <Award size={26} />
           </div>
           <div>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Best Score</p>
-            <h3 style={{ fontSize: '2rem' }}>{bestAcc}%</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Best Score</p>
+            <h3 style={{ fontSize: '1.8rem', lineHeight: 1 }}>{bestAcc}%</h3>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '40px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         <div className="glass-card" style={{ padding: '32px' }}>
           <h2 style={{ fontSize: '1.5rem', marginBottom: '32px' }}>Performance Trend</h2>
           {total > 0 ? (
