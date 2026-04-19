@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings } from 'lucide-react';
+import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Copy, Check } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { analyzeTestResult } from '../utils/engine';
@@ -26,6 +26,9 @@ export default function TestPage() {
   const [history, setHistory] = useState([]);
   
   const [countdown, setCountdown] = useState(0);
+  const [audioCountdown, setAudioCountdown] = useState(0); // 5-sec pre-audio timer
+  const [isCopied, setIsCopied] = useState(false);
+  const resultRef = useRef(null);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -146,7 +149,36 @@ export default function TestPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [status]);
 
-  const handleStartListening = () => {
+  // 5-second pre-audio countdown effect
+  useEffect(() => {
+    if (audioCountdown <= 0) return;
+    const t = setTimeout(() => {
+      setAudioCountdown(prev => {
+        if (prev <= 1) {
+          // Countdown done — actually play the audio now
+          if (mediaRef.current) {
+            mediaRef.current.playbackRate = targetWpm / 60;
+            mediaRef.current.play();
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearTimeout(t);
+  }, [audioCountdown, targetWpm]);
+
+  const handleStartListening = (e) => {
+    // Block the browser from playing audio directly on first play click
+    // We intercept the play event and show our own 5-sec timer instead
+    if (audioCountdown === 0 && mediaRef.current && mediaRef.current.currentTime === 0) {
+      // Only intercept the very first play (not resume after pause)
+      e.preventDefault?.();
+      mediaRef.current.pause();
+      setAudioCountdown(5);
+      return;
+    }
+    // For resume / re-play, just set playback rate
     if (mediaRef.current) {
       mediaRef.current.playbackRate = targetWpm / 60;
     }
@@ -221,26 +253,28 @@ export default function TestPage() {
 
       setResult(safeResult);
       
-      // Secondary fire-and-forget save to database
-      // Clear cached results so dashboard refreshes immediately
-      db.saveAttempt(user.id, {
-        courseId,
-        levelId,
-        lessonId,
-        lessonTitle: lesson?.title || '',
-        wpm: safeResult.wpm,
-        accuracy: safeResult.accuracy,
-        errorPercent: safeResult.errorPercent,
-        fullMistakes: safeResult.fullMistakes,
-        halfMistakes: safeResult.halfMistakes,
-        totalWords: safeResult.totalWords,
-        typedWords: safeResult.typedWords,
-        mistakes: safeResult.errorUnits,
-        passed: safeResult.errorPercent <= (lesson?.allowedErrorPercent ?? 5),
-        cheatingWarnings: warnings,
-        timestamp: new Date().toISOString()
-      }).catch(err => console.error("Database save failed:", err));
-
+      // Save to database FIRST, then load analytics
+      try {
+        await db.saveAttempt(user.id, {
+          courseId,
+          levelId,
+          lessonId,
+          lessonTitle: lesson?.title || '',
+          wpm: safeResult.wpm,
+          accuracy: safeResult.accuracy,
+          errorPercent: safeResult.errorPercent,
+          fullMistakes: safeResult.fullMistakes,
+          halfMistakes: safeResult.halfMistakes,
+          totalWords: safeResult.totalWords,
+          typedWords: safeResult.typedWords,
+          mistakes: safeResult.errorUnits,
+          passed: safeResult.errorPercent <= (lesson?.allowedErrorPercent ?? 5),
+          cheatingWarnings: warnings,
+          timestamp: new Date().toISOString()
+        });
+      } catch (err) {
+        console.error("Database save failed:", err);
+      }
 
       loadAnalytics();
 
@@ -452,7 +486,7 @@ export default function TestPage() {
   if (!lesson) return null;
 
   return (
-    <div style={{ maxWidth: '900px', margin: '0 auto', width: '100%', paddingBottom: '40px' }}>
+    <div style={{ width: '100%', paddingBottom: '40px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '4px' }}>{lesson.title}</h1>
@@ -501,6 +535,18 @@ export default function TestPage() {
                   onPlay={handleStartListening}
                   style={{ width: '100%', height: '40px' }}
                 />
+                {/* 5-Second Pre-Audio Countdown Overlay */}
+                {audioCountdown > 0 && (
+                  <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 20px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(14,165,233,0.12), rgba(99,102,241,0.12))', border: '1px solid rgba(14,165,233,0.3)' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.4rem', animation: 'countdownScale 1s infinite', flexShrink: 0 }}>
+                      {audioCountdown}
+                    </div>
+                    <div>
+                      <p style={{ fontWeight: 700, margin: 0, fontSize: '0.95rem' }}>Get Ready! Audio starts in {audioCountdown}s</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>Prepare your pen and notes 🖊️</p>
+                    </div>
+                  </div>
+                )}
                 <p style={{ fontSize: '0.75rem', marginTop: '6px', color: 'var(--primary)', fontWeight: 600 }}>
                   Current Speed: {(targetWpm / 60).toFixed(2)}x &nbsp;|&nbsp; {targetWpm} WPM
                 </p>
@@ -652,15 +698,47 @@ export default function TestPage() {
       </div>
 
       {status === "finished" && result && (
-        <div className="glass-card" style={{ padding: '32px', animation: 'fadeIn 0.5s ease-out' }}>
+        <div ref={resultRef} className="glass-card" style={{ padding: '32px', animation: 'fadeIn 0.5s ease-out' }}>
           {/* RESULT HEADER */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--success)' }}>
               <CheckCircle size={36} />
               <div>
                 <h2 style={{ fontSize: '2rem', margin: 0 }}>Test Completed! 🎉</h2>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Here is your detailed performance breakdown</p>
+                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Saved to your profile · {new Date().toLocaleString()}</p>
               </div>
+            </div>
+            {/* Download + Share Buttons */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={async () => {
+                  try {
+                    const { default: html2canvas } = await import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.esm.min.js');
+                    const canvas = await html2canvas(resultRef.current, { scale: 2, backgroundColor: '#0f172a', useCORS: true });
+                    const link = document.createElement('a');
+                    link.download = `SSA-Result-${lesson?.title || 'test'}-${new Date().toLocaleDateString().replace(/\//g, '-')}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                  } catch(e) { alert('Download failed — try screenshot.'); }
+                }}
+                className="btn btn-outline"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '0.88rem' }}
+              >
+                <Download size={16} /> Download Result
+              </button>
+              <button
+                onClick={() => {
+                  const text = `📊 My SSA Test Result\n📝 ${lesson?.title}\n⚡ WPM: ${result.wpm} | ✅ Accuracy: ${result.accuracy}% | 🔴 Mistakes: ${result.fullMistakes} Full, ${result.halfMistakes} Half\n${parseFloat(result.errorPercent) <= (lesson?.allowedErrorPercent ?? 5) ? '✅ PASSED' : '❌ FAILED'} | Error: ${result.errorPercent}%\n\n🎯 Speed Script Academy`;
+                  navigator.clipboard.writeText(text).then(() => {
+                    setIsCopied(true);
+                    setTimeout(() => setIsCopied(false), 2000);
+                  });
+                }}
+                className="btn"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 18px', fontSize: '0.88rem', background: isCopied ? 'rgba(16,185,129,0.15)' : 'rgba(99,102,241,0.1)', border: `1px solid ${isCopied ? 'var(--success)' : 'rgba(99,102,241,0.4)'}`, color: isCopied ? 'var(--success)' : '#818cf8' }}
+              >
+                {isCopied ? <><Check size={16} /> Copied!</> : <><Share2 size={16} /> Share Result</>}
+              </button>
             </div>
           </div>
 
@@ -784,7 +862,7 @@ export default function TestPage() {
               { color: '#ef4444', label: '● Full Mistake (F)' },
               { color: '#f59e0b', label: '◑ Half Mistake (H)' },
               { color: '#0ea5e9', label: '▽ Omission (F)' },
-              { color: '#dc2626', label: '✕ Wrong Word (F×2)' },
+              { color: '#dc2626', label: '✕ Wrong Word (F)' },
             ].map(({ color, label }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600 }}>
                 <div style={{ width: 12, height: 12, background: color, borderRadius: '2px' }} />
@@ -793,7 +871,7 @@ export default function TestPage() {
             ))}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)', borderRadius: '8px', padding: '8px 14px', marginBottom: '16px' }}>
-            ⚠️ <strong>SSC Rule:</strong> Wrong word = <strong>2 Full Mistakes</strong> (1 for omitting correct word + 1 for typing wrong word)
+            ℹ️ <strong>Marking:</strong> Wrong word = <strong>1 Full Mistake</strong> | Omitted word = <strong>1 Full Mistake</strong> | Spelling = <strong>Half Mistake</strong>
           </div>
 
           <div style={{ 
