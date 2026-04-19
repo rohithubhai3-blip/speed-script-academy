@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminRegisterPage from './pages/AdminRegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import MyResultsPage from './pages/MyResultsPage';
 import CoursesPage from './pages/CoursesPage';
 import AdminDashboard from './pages/AdminDashboard';
 import TestPage from './pages/TestPage';
@@ -61,6 +62,12 @@ function App() {
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <DashboardPage />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/my-results" element={
+                  <ProtectedRoute>
+                    <MyResultsPage />
                   </ProtectedRoute>
                 } />
 

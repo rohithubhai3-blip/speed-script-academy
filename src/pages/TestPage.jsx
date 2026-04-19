@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Copy, Check } from 'lucide-react';
+import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Check } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { analyzeTestResult } from '../utils/engine';
@@ -26,7 +26,6 @@ export default function TestPage() {
   const [history, setHistory] = useState([]);
   
   const [countdown, setCountdown] = useState(0);
-  const [audioCountdown, setAudioCountdown] = useState(0); // 5-sec pre-audio timer
   const [isCopied, setIsCopied] = useState(false);
   const resultRef = useRef(null);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '' });
@@ -99,7 +98,22 @@ export default function TestPage() {
     load();
   }, [courseId, levelId, lessonId, navigate]);
 
-  // Timer Effect
+   // Restore last result from localStorage if available (survives refresh)
+  useEffect(() => {
+    const persistKey = `ssa_last_result_${user?.id || 'guest'}`;
+    const saved = localStorage.getItem(persistKey);
+    if (saved && status === 'ready') {
+      try {
+        const parsed = JSON.parse(saved);
+        // Only restore if same lesson
+        if (parsed.result && lessonId === parsed.lessonId) {
+          setResult(parsed.result);
+          setStatus('finished');
+        }
+      } catch(_) {}
+    }
+  }, [lessonId, user?.id]);
+
   useEffect(() => {
     let interval = null;
     if (status === "running" && timeLeft > 0) {
@@ -149,36 +163,7 @@ export default function TestPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, [status]);
 
-  // 5-second pre-audio countdown effect
-  useEffect(() => {
-    if (audioCountdown <= 0) return;
-    const t = setTimeout(() => {
-      setAudioCountdown(prev => {
-        if (prev <= 1) {
-          // Countdown done — actually play the audio now
-          if (mediaRef.current) {
-            mediaRef.current.playbackRate = targetWpm / 60;
-            mediaRef.current.play();
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearTimeout(t);
-  }, [audioCountdown, targetWpm]);
-
-  const handleStartListening = (e) => {
-    // Block the browser from playing audio directly on first play click
-    // We intercept the play event and show our own 5-sec timer instead
-    if (audioCountdown === 0 && mediaRef.current && mediaRef.current.currentTime === 0) {
-      // Only intercept the very first play (not resume after pause)
-      e.preventDefault?.();
-      mediaRef.current.pause();
-      setAudioCountdown(5);
-      return;
-    }
-    // For resume / re-play, just set playback rate
+  const handleStartListening = () => {
     if (mediaRef.current) {
       mediaRef.current.playbackRate = targetWpm / 60;
     }
@@ -252,10 +237,19 @@ export default function TestPage() {
       };
 
       setResult(safeResult);
+
+      // Persist result in localStorage so refresh doesn't wipe it
+      const persistKey = `ssa_last_result_${user?.id || 'guest'}`;
+      localStorage.setItem(persistKey, JSON.stringify({
+        result: safeResult,
+        lessonTitle: lesson?.title,
+        lessonAllowedError: lesson?.allowedErrorPercent ?? 5,
+        savedAt: new Date().toISOString()
+      }));
       
       // Save to database FIRST, then load analytics
       try {
-        await db.saveAttempt(user.id, {
+        const saved = await db.saveAttempt(user.id, {
           courseId,
           levelId,
           lessonId,
@@ -272,11 +266,17 @@ export default function TestPage() {
           cheatingWarnings: warnings,
           timestamp: new Date().toISOString()
         });
+        // Save full detail (visualHTML) keyed by attempt _id for My Results page
+        if (saved?.attemptId) {
+          const detailKey = `ssa_detail_${user?.id}_${saved.attemptId}`;
+          localStorage.setItem(detailKey, JSON.stringify({ result: safeResult }));
+        }
       } catch (err) {
         console.error("Database save failed:", err);
       }
 
       loadAnalytics();
+
 
     } catch (err) {
       console.error("Test Submission Error:", err);
@@ -654,18 +654,6 @@ export default function TestPage() {
                   {status === "running" ? "Phase 2: Transcription (Active)" : "Phase 2: Transcription (Ready - Start Typing)"}
                 </div>
               </div>
-              <button 
-                className="btn" 
-                onClick={handleSubmit} 
-                style={{ 
-                  background: 'rgba(244, 63, 94, 0.1)', 
-                  color: 'var(--danger)', 
-                  border: '1px solid var(--danger)',
-                  padding: '8px 24px' 
-                }}
-              >
-                End Test
-              </button>
             </div>
 
             <textarea 
@@ -693,9 +681,27 @@ export default function TestPage() {
               autoComplete="off"
               spellCheck="false"
             />
+
+            {/* End Test button — below the textarea */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn" 
+                onClick={handleSubmit} 
+                style={{ 
+                  background: 'rgba(244, 63, 94, 0.1)', 
+                  color: 'var(--danger)', 
+                  border: '1px solid var(--danger)',
+                  padding: '10px 32px',
+                  fontSize: '0.95rem'
+                }}
+              >
+                End Test
+              </button>
+            </div>
           </div>
         )}
       </div>
+
 
       {status === "finished" && result && (
         <div ref={resultRef} className="glass-card" style={{ padding: '32px', animation: 'fadeIn 0.5s ease-out' }}>

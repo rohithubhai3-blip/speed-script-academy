@@ -49,9 +49,14 @@ export default function DashboardPage() {
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Welcome back, {user.name}!</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Here's an overview of your stenography progress.</p>
         </div>
-        <Link to="/courses" className="btn btn-primary" style={{ padding: '12px 24px' }}>
-          Resume Practice
-        </Link>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+          <Link to="/my-results" className="btn btn-outline" style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            📋 My Results
+          </Link>
+          <Link to="/courses" className="btn btn-primary" style={{ padding: '12px 24px' }}>
+            Resume Practice
+          </Link>
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
