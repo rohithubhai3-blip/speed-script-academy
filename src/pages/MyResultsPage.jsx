@@ -84,15 +84,7 @@ export default function MyResultsPage() {
   const navigate = useNavigate();
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null); // full result object from localStorage
-
-  // Load saved detailed results from localStorage (keyed per attempt _id)
-  const getDetailedResult = (attemptId) => {
-    try {
-      const raw = localStorage.getItem(`ssa_detail_${user?.id}_${attemptId}`);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  };
+  const [selected, setSelected] = useState(null); 
 
   useEffect(() => {
     async function load() {
@@ -135,9 +127,11 @@ export default function MyResultsPage() {
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
           {attempts.map((a, idx) => {
-            const isPassed = a.passed ?? (parseFloat(a.errorPercent) <= 5);
-            const detail = getDetailedResult(a._id);
+            const isPassed = a.passed ?? (parseFloat(a.accuracy) >= 95);
             const isOpen = selected === a._id;
+            // Use server data if available, or fallback to any local metadata (if needed for old tests)
+            const visualHTML = a.visualHTML;
+            const rules = a.rules;
 
             return (
               <div key={a._id || idx} className="glass-card" style={{ overflow: 'hidden' }}>
@@ -199,8 +193,8 @@ export default function MyResultsPage() {
 
                 {/* Expanded Detail View */}
                 {isOpen && (
-                  <div style={{ padding: '24px', animation: 'fadeIn 0.25s ease' }}>
-                    {detail?.result?.visualHTML ? (
+                  <div style={{ padding: '24px', animation: 'fadeIn 0.25s ease', borderTop: '1px solid var(--border-color)' }}>
+                    {visualHTML && visualHTML.length > 0 ? (
                       <>
                         {/* Stats row */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', marginBottom: '24px' }}>
@@ -221,7 +215,7 @@ export default function MyResultsPage() {
 
                         {/* Pass / Fail Banner */}
                         <div style={{ background: isPassed ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.07)', border: `1px solid ${isPassed ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.2)'}`, borderRadius: '10px', padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '8px' }}>
-                          <span style={{ fontWeight: 700 }}>Error: <span style={{ color: isPassed ? 'var(--success)' : 'var(--danger)' }}>{parseFloat(a.errorPercent).toFixed(2)}%</span></span>
+                          <span style={{ fontWeight: 700 }}>Error: <span style={{ color: isPassed ? 'var(--success)' : 'var(--danger)' }}>{parseFloat(a.errorPercent || 0).toFixed(2)}%</span></span>
                           <span style={{ fontWeight: 700, color: isPassed ? 'var(--success)' : 'var(--danger)' }}>{isPassed ? '✅ PASSED' : '❌ FAILED'}</span>
                         </div>
 
@@ -246,14 +240,26 @@ export default function MyResultsPage() {
                           lineHeight: 2.4, border: '1px solid var(--border-color)', color: '#334155',
                           display: 'flex', flexWrap: 'wrap', gap: '8px 4px'
                         }}>
-                          {detail.result.visualHTML.map((item, i) => (
+                          {visualHTML.map((item, i) => (
                             <MistakeChip key={i} item={item} />
                           ))}
                         </div>
+
+                        {/* Rules Section if available */}
+                        {rules && Object.keys(rules).length > 0 && (
+                          <div style={{ marginTop: '24px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+                             <h4 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase' }}>Rules Applied</h4>
+                             <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '0.8rem' }}>
+                                <span>Cap: <b>{rules.capRule}</b></span>
+                                <span>Punctuation: <b>{rules.punctRule}</b></span>
+                                <span>Spelling: <b>{rules.similarWordRule}</b></span>
+                             </div>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-secondary)' }}>
-                        <p style={{ marginBottom: '8px' }}>📊 Summary only — detailed visual analysis is available for tests taken after this update.</p>
+                        <p style={{ marginBottom: '8px' }}>📊 Summary only — detailed visual analysis was not stored for this test.</p>
                         <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>WPM: {a.wpm} · Accuracy: {parseFloat(a.accuracy).toFixed(1)}% · Full Mistakes: {a.fullMistakes ?? '—'} · Half: {a.halfMistakes ?? '—'}</p>
                       </div>
                     )}

@@ -17,6 +17,8 @@ const attemptSchema = new mongoose.Schema({
   typedWords:       { type: Number, default: 0 },
   passed:           { type: Boolean, default: false },
   cheatingWarnings: { type: Number, default: 0 },
+  visualHTML:       { type: Array, default: [] },  // Word-by-word analysis details
+  rules:            { type: Object, default: {} },  // Evaluator rules applied
   timestamp:        { type: Date, default: Date.now }
 });
 

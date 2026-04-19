@@ -14,6 +14,8 @@ router.post('/submit', protect, async (req, res) => {
     mistakes,   // backward compat: totalMistakes / errorUnits
     passed,
     cheatingWarnings,
+    visualHTML,
+    rules,
     timestamp
   } = req.body;
 
@@ -35,6 +37,8 @@ router.post('/submit', protect, async (req, res) => {
       mistakes:         Number(mistakes)     || 0,
       passed:           Boolean(passed),
       cheatingWarnings: Number(cheatingWarnings) || 0,
+      visualHTML:       visualHTML || [],
+      rules:            rules || {},
       timestamp:        timestamp ? new Date(timestamp) : new Date(),
     });
 

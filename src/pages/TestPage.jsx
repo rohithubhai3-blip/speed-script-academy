@@ -264,13 +264,10 @@ export default function TestPage() {
           mistakes: safeResult.errorUnits,
           passed: safeResult.errorPercent <= (lesson?.allowedErrorPercent ?? 5),
           cheatingWarnings: warnings,
+          visualHTML: safeResult.visualHTML,
+          rules: safeResult.rules,
           timestamp: new Date().toISOString()
         });
-        // Save full detail (visualHTML) keyed by attempt _id for My Results page
-        if (saved?.attemptId) {
-          const detailKey = `ssa_detail_${user?.id}_${saved.attemptId}`;
-          localStorage.setItem(detailKey, JSON.stringify({ result: safeResult }));
-        }
       } catch (err) {
         console.error("Database save failed:", err);
       }
@@ -535,18 +532,6 @@ export default function TestPage() {
                   onPlay={handleStartListening}
                   style={{ width: '100%', height: '40px' }}
                 />
-                {/* 5-Second Pre-Audio Countdown Overlay */}
-                {audioCountdown > 0 && (
-                  <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 20px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(14,165,233,0.12), rgba(99,102,241,0.12))', border: '1px solid rgba(14,165,233,0.3)' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '1.4rem', animation: 'countdownScale 1s infinite', flexShrink: 0 }}>
-                      {audioCountdown}
-                    </div>
-                    <div>
-                      <p style={{ fontWeight: 700, margin: 0, fontSize: '0.95rem' }}>Get Ready! Audio starts in {audioCountdown}s</p>
-                      <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>Prepare your pen and notes 🖊️</p>
-                    </div>
-                  </div>
-                )}
                 <p style={{ fontSize: '0.75rem', marginTop: '6px', color: 'var(--primary)', fontWeight: 600 }}>
                   Current Speed: {(targetWpm / 60).toFixed(2)}x &nbsp;|&nbsp; {targetWpm} WPM
                 </p>
