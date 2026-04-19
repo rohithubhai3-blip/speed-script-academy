@@ -312,12 +312,8 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
     }
 
     // ── 10. SUBSTITUTION (completely different word) ─────
-    // SSC Rule: Counts as 2 FULL mistakes:
-    //   → 1 Full for the correct word that was OMITTED
-    //   → 1 Full for the wrong word that was ADDED
-    addFull();  // for the missing correct word
-    resultHtmlArray.push({ word: oW, original: oW, type: 'missing', mistakeClass: 'full', note: 'substitution_missing' });
-    addFull();  // for the extra wrong word typed
+    // 1 Full mistake: the correct word was replaced by a wrong word
+    addFull();
     resultHtmlArray.push({ word: tW, original: oW, type: 'substitution_extra', mistakeClass: 'full', note: 'substitution_extra' });
     i++; j++;
   }
