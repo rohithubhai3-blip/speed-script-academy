@@ -96,7 +96,11 @@ export default function LandingPage() {
         <div style={{ maxWidth: '900px', zIndex: 10 }}>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '24px', flexWrap: 'wrap' }}>
             <div className="badge animate-fade-in" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', fontWeight: 600, fontSize: '0.9rem' }}>✨ Ranked #1 Shorthand Platform</div>
-            <div className="badge animate-fade-in" style={{ animationDelay: '0.1s', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>🎁 FREE COURSES AVAILABLE</div>
+            {content.promoBadge?.enabled && (
+              <div className="badge animate-fade-in" style={{ animationDelay: '0.1s', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>
+                {content.promoBadge.text}
+              </div>
+            )}
           </div>
           <h1 className="animate-fade-in" style={{ 
             fontSize: 'clamp(3rem, 6vw, 5.5rem)', 

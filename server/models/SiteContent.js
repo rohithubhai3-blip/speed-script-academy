@@ -62,6 +62,10 @@ const siteContentSchema = new mongoose.Schema({
     text: { type: String, default: '' },
     link: { type: String, default: '' }
   },
+  promoBadge: {
+    enabled: { type: Boolean, default: true },
+    text: { type: String, default: '🎁 FREE COURSES AVAILABLE' }
+  },
   updatedAt: { type: Date, default: Date.now }
 });
 

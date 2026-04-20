@@ -1325,6 +1325,25 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Hero Promo Badge (Green Chip)</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={siteContent.promoBadge?.enabled || false} 
+                        onChange={e => setSiteContent({...siteContent, promoBadge: {...siteContent.promoBadge, enabled: e.target.checked}})} 
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <label style={{ fontWeight: 600 }}>Enable Hero Promo Badge</label>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Badge Text (e.g. 🎁 FREE COURSES AVAILABLE)</label>
+                      <input type="text" className="input-field" value={siteContent.promoBadge?.text || ''} onChange={e => setSiteContent({...siteContent, promoBadge: {...siteContent.promoBadge, text: e.target.value}})} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '32px' }}>
                   <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Features Grid Editor</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {(siteContent.features || []).map((f, idx) => (

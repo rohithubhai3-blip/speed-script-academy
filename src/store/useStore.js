@@ -4,7 +4,7 @@ import { create } from 'zustand';
 const useStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('ssa_user')) || null,
   activeTest: null,
-  theme: localStorage.getItem('ssa_theme') || 'lite',
+  theme: localStorage.getItem('ssa_theme') || 'dark',
   
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'lite' ? 'dark' : 'lite';
