@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   ArrowRight, Activity, Zap, ShieldCheck, Server, 
-  ChevronDown, ChevronUp, CheckCircle, Smartphone 
+  ChevronDown, ChevronUp, CheckCircle, Smartphone,
+  Youtube, Send, MessageCircle, Star 
 } from 'lucide-react';
 import useStore from '../store/useStore';
 import { db } from '../data/db';
@@ -21,7 +22,28 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState(null);
 
   useEffect(() => {
-    db.getSiteContent().then(setContent);
+    db.getSiteContent().then(res => {
+      setContent(res);
+      // 🔥 Dynamic SEO Injection
+      if (res.seo) {
+        document.title = res.seo.title || "Speed Script Academy";
+        let metaDesc = document.querySelector('meta[name="description"]');
+        if (!metaDesc) {
+           metaDesc = document.createElement('meta');
+           metaDesc.name = "description";
+           document.head.appendChild(metaDesc);
+        }
+        metaDesc.content = res.seo.description || "";
+
+        let metaKw = document.querySelector('meta[name="keywords"]');
+        if (!metaKw) {
+           metaKw = document.createElement('meta');
+           metaKw.name = "keywords";
+           document.head.appendChild(metaKw);
+        }
+        metaKw.content = res.seo.keywords || "";
+      }
+    });
   }, []);
 
   if (!content) return (
@@ -78,6 +100,27 @@ export default function LandingPage() {
               </>
             )}
           </div>
+
+          {/* Dynamic Social Links */}
+          {(content.socials?.youtube || content.socials?.telegram || content.socials?.whatsapp) && (
+            <div className="animate-fade-in" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '40px', animationDelay: '0.5s' }}>
+              {content.socials.youtube && (
+                <a href={content.socials.youtube} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#FF0000', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Youtube size={16} /> YouTube
+                </a>
+              )}
+              {content.socials.telegram && (
+                <a href={content.socials.telegram} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(0, 136, 204, 0.1)', color: '#0088cc', border: '1px solid rgba(0,136,204,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Send size={16} /> Telegram
+                </a>
+              )}
+              {content.socials.whatsapp && (
+                <a href={`https://wa.me/${content.socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MessageCircle size={16} /> WhatsApp
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -181,6 +224,42 @@ export default function LandingPage() {
            </div>
         </div>
       </section>
+
+      {/* Wall of Love (Student Reviews) */}
+      {content.reviews && content.reviews.length > 0 && (
+        <section style={{ padding: '100px 20px', background: 'var(--bg-surface-elevated)' }}>
+          <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+              <h2 style={{ fontSize: '3rem', marginBottom: '16px' }}>Wall of <span className="text-gradient">Student Success</span></h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>Don't just take our word for it. See what our selections say.</p>
+            </div>
+            
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+              gap: '24px' 
+            }}>
+              {content.reviews.map((review, i) => (
+                <div key={i} className="glass-card" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '4px', color: '#F59E0B' }}>
+                    {[...Array(review.stars || 5)].map((_, sIdx) => <Star key={sIdx} size={20} fill="currentColor" />)}
+                  </div>
+                  <p style={{ fontSize: '1.1rem', lineHeight: 1.6, flex: 1 }}>"{review.text}"</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--primary), var(--secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
+                      {review.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h4 style={{ margin: 0, fontSize: '1rem' }}>{review.name}</h4>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--primary)' }}>{review.role}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Bottom CTA */}
       <section style={{ padding: '100px 20px', textAlign: 'center' }}>

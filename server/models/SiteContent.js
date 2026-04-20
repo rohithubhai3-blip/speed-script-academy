@@ -41,6 +41,22 @@ const siteContentSchema = new mongoose.Schema({
     title: String,
     content: String
   },
+  seo: {
+    title: { type: String, default: 'Speed Script Academy | Mastery in Shorthand' },
+    description: { type: String, default: 'The ultimate platform for learning and practicing shorthand for SSC, High Courts, and all state exams.' },
+    keywords: { type: String, default: 'shorthand, stenography, SSC stenographer, typing speed, online shorthand course' }
+  },
+  socials: {
+    youtube: { type: String, default: '' },
+    telegram: { type: String, default: '' },
+    whatsapp: { type: String, default: '' }
+  },
+  reviews: [{
+    name: String,
+    role: String,
+    text: String,
+    stars: { type: Number, default: 5 }
+  }],
   updatedAt: { type: Date, default: Date.now }
 });
 

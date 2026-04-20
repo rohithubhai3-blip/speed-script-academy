@@ -39,18 +39,18 @@ const MOCK_COURSES = [
 const INITIAL_SITE_CONTENT = {
   key: 'main',
   hero: {
-    title: "Master Shorthand from basic to advance.",
-    subtitle: "Speed Script Academy is a professional training platform focused on developing shorthand proficiency with speed, accuracy and consistency. We deliver structured, exam-oriented courses with practical dictation and performance-based learning. Our mission is to equip learners with the skills and confidence required to excel in stenography careers and competitive exams."
+    title: "Crack All-India Stenographer Skill Tests!",
+    subtitle: "Complete Skill Test Preparation platform designed for SSC, High Court, and JKSSB aspirants. Real exam practice with instant speed tracking to build your confidence."
   },
   features: [
-    { icon: "Activity", title: "Real Dictation", desc: "real exam level dictations designed to match competitive stenography skill test standards." },
-    { icon: "Zap", title: "Smart Evaluation", desc: "Instant grading of Your WPM, error rates, and accuracy percentage." },
-    { icon: "ShieldCheck", title: "Cheat-Proof", desc: "Built-in anti-cheat prevents copy-pasting and monitors tab switching." },
-    { icon: "Server", title: "Progressive Learning", desc: "Structured lessons from 60 WPM to 120 WPM to build your confidence." }
+    { icon: "Activity", title: "Real Exam Practice", desc: "Authentic dictations designed to match competitive stenography skill test standards." },
+    { icon: "Zap", title: "Accuracy & Speed Tracking", desc: "Instant grading of Your WPM, error rates, and translation accuracy percentage." },
+    { icon: "ShieldCheck", title: "Structured Learning System", desc: "Progressive learning path from basic to 120+ WPM. Built-in anti-cheat system." },
+    { icon: "Server", title: "2026 Batch Open!", desc: "New batches now open! Limited seats available for dedicated shorthand focus." }
   ],
   stats: [
     { label: "Lessons", value: "50+" },
-    { label: "Students", value: "1,200+" },
+    { label: "Students Selected", value: "850+" },
     { label: "Success Rate", value: "94%" },
     { label: "Expert Audio", value: "100h+" }
   ],
@@ -62,7 +62,7 @@ const INITIAL_SITE_CONTENT = {
   ],
   faq: [
     { q: "Is this suitable for beginners?", a: "Yes! We have dedicated courses starting from 60 WPM for beginners." },
-    { q: "Can I use it on mobile?", a: "While the site is responsive, we recommend a keyboard for the best typing experience." },
+    { q: "What exams do you target?", a: "Our platform prepares you for SSC Steno, State High Courts, Parliament Reporter, and JKSSB." },
     { q: "How do I get my results?", a: "Results are generated instantly after you finish or submit your test." },
     { q: "Is there a refund policy?", a: "Yes, we offer refunds on manual payments within 24 hours if access hasn't been used." }
   ],
@@ -83,7 +83,22 @@ const INITIAL_SITE_CONTENT = {
   refund: {
     title: "Refund Policy",
     content: "Course fees are generally non-refundable once content is accessed. For manual payments, if you encounter technical issues prevent course access, a full refund can be requested within 24 hours of payment. Please contact our support team via WhatsApp for refund queries."
-  }
+  },
+  seo: {
+    title: "Speed Script Academy | Crack Stenographer Skill Tests",
+    description: "The ultimate platform for learning and practicing shorthand for SSC, High Courts, Parliament, and JKSSB exams. Real practice, instant speed tracking.",
+    keywords: "shorthand, stenography, SSC stenographer, shorthand typing speed, online shorthand course, JKSSB skill test, High court steno"
+  },
+  socials: {
+    youtube: "https://youtube.com/@speedscript",
+    telegram: "https://t.me/speedscript",
+    whatsapp: "919876543210"
+  },
+  reviews: [
+    { name: "Amit Kumar", role: "100 WPM, SSC Qualifier", text: "The accuracy tracking here is exactly what I needed to clear my SSC grade C exam. Unmatched quality!", stars: 5 },
+    { name: "Priya Sharma", role: "80 WPM, Beginner", text: "Very structured courses. Moving from 60 to 80 WPM felt totally natural with these dictations.", stars: 5 },
+    { name: "Rahul D.", role: "High Court Aspirant", text: "Legal dictations are spot on. Anti-cheat feature forces you to perform like the real exam day.", stars: 4 }
+  ]
 };
 
 const seed = async () => {

@@ -1249,38 +1249,96 @@ export default function AdminDashboard() {
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
               
               {/* Hero & Pages Section */}
-              <div className="glass-panel" style={{ padding: '32px' }}>
-                <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Main Sections & Pages</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  <div className="input-group">
-                    <label className="input-label">Hero Title</label>
-                    <input type="text" className="input-field" value={siteContent.hero.title} onChange={e => setSiteContent({...siteContent, hero: {...siteContent.hero, title: e.target.value}})} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Hero Section</h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="input-group">
+                      <label className="input-label">Hero Title</label>
+                      <input type="text" className="input-field" value={siteContent.hero.title} onChange={e => setSiteContent({...siteContent, hero: {...siteContent.hero, title: e.target.value}})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Hero Subtitle</label>
+                      <textarea className="input-field" style={{ minHeight: '80px' }} value={siteContent.hero.subtitle} onChange={e => setSiteContent({...siteContent, hero: {...siteContent.hero, subtitle: e.target.value}})} />
+                    </div>
                   </div>
-                  <div className="input-group">
-                    <label className="input-label">Hero Subtitle</label>
-                    <textarea className="input-field" style={{ minHeight: '80px' }} value={siteContent.hero.subtitle} onChange={e => setSiteContent({...siteContent, hero: {...siteContent.hero, subtitle: e.target.value}})} />
-                  </div>
+                </div>
 
-                  {['about', 'privacy', 'refund'].map(pageKey => (
-                     <div key={pageKey} style={{ background: 'var(--bg-base)', padding: '16px', borderRadius: '8px', marginTop: '10px' }}>
-                        <h4 style={{ textTransform: 'capitalize', marginBottom: '12px', fontSize: '1rem' }}>{pageKey} Page</h4>
-                        <div className="input-group">
-                          <label className="input-label">Title</label>
-                          <input type="text" className="input-field" value={siteContent[pageKey].title} onChange={e => setSiteContent({...siteContent, [pageKey]: {...siteContent[pageKey], title: e.target.value}})} />
-                        </div>
-                        <div className="input-group">
-                          <label className="input-label">Long Content (Markdown Support)</label>
-                          <textarea className="input-field" style={{ minHeight: '150px' }} value={siteContent[pageKey].content} onChange={e => setSiteContent({...siteContent, [pageKey]: {...siteContent[pageKey], content: e.target.value}})} />
-                        </div>
-                     </div>
-                  ))}
+                <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>SEO Tags (Google Ranking)</h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="input-group">
+                      <label className="input-label">Meta Title</label>
+                      <input type="text" className="input-field" value={siteContent.seo?.title || ''} onChange={e => setSiteContent({...siteContent, seo: {...siteContent.seo, title: e.target.value}})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Meta Description</label>
+                      <textarea className="input-field" style={{ minHeight: '60px' }} value={siteContent.seo?.description || ''} onChange={e => setSiteContent({...siteContent, seo: {...siteContent.seo, description: e.target.value}})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Meta Keywords</label>
+                      <input type="text" className="input-field" value={siteContent.seo?.keywords || ''} onChange={e => setSiteContent({...siteContent, seo: {...siteContent.seo, keywords: e.target.value}})} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Global Social Links</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div className="input-group">
+                      <label className="input-label">YouTube URL</label>
+                      <input type="text" className="input-field" value={siteContent.socials?.youtube || ''} onChange={e => setSiteContent({...siteContent, socials: {...siteContent.socials, youtube: e.target.value}})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Telegram Link</label>
+                      <input type="text" className="input-field" value={siteContent.socials?.telegram || ''} onChange={e => setSiteContent({...siteContent, socials: {...siteContent.socials, telegram: e.target.value}})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">WhatsApp Number (e.g. 919876543210)</label>
+                      <input type="text" className="input-field" value={siteContent.socials?.whatsapp || ''} onChange={e => setSiteContent({...siteContent, socials: {...siteContent.socials, whatsapp: e.target.value}})} />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* FAQ & Dynamic Lists Section */}
+              {/* Dynamic Lists Section */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                 
+                <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Student Reviews</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {(siteContent.reviews || []).map((r, idx) => (
+                      <div key={idx} style={{ padding: '12px', background: 'var(--bg-base)', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                           <span style={{ fontWeight: 'bold', fontSize: '0.8rem' }}>Review {idx + 1}</span>
+                           <button onClick={() => {
+                             const newReviews = siteContent.reviews.filter((_, i) => i !== idx);
+                             setSiteContent({...siteContent, reviews: newReviews});
+                           }} style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem' }}>Remove</button>
+                        </div>
+                        <input type="text" placeholder="Student Name" className="input-field" style={{ marginBottom: '8px' }} value={r.name || ''} onChange={e => {
+                           const newReviews = [...siteContent.reviews];
+                           newReviews[idx].name = e.target.value;
+                           setSiteContent({...siteContent, reviews: newReviews});
+                        }} />
+                        <input type="text" placeholder="Role (e.g. 100 WPM, SSC Steno)" className="input-field" style={{ marginBottom: '8px' }} value={r.role || ''} onChange={e => {
+                           const newReviews = [...siteContent.reviews];
+                           newReviews[idx].role = e.target.value;
+                           setSiteContent({...siteContent, reviews: newReviews});
+                        }} />
+                        <textarea placeholder="Review text..." className="input-field" value={r.text || ''} onChange={e => {
+                           const newReviews = [...siteContent.reviews];
+                           newReviews[idx].text = e.target.value;
+                           setSiteContent({...siteContent, reviews: newReviews});
+                        }} />
+                      </div>
+                    ))}
+                    <button className="btn btn-outline" style={{width:'100%'}} onClick={() => setSiteContent({...siteContent, reviews: [...(siteContent.reviews || []), {name: '', role: '', text: '', stars: 5}]})}>+ Add Student Review</button>
+                  </div>
+                </div>
+
                 <div className="glass-panel" style={{ padding: '32px' }}>
                   <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>FAQ Management</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -1305,12 +1363,12 @@ export default function AdminDashboard() {
                         }} />
                       </div>
                     ))}
-                    <button className="btn btn-outline w-full" onClick={() => setSiteContent({...siteContent, faq: [...siteContent.faq, {q: 'New Question', a: 'New Answer'}]})}>+ Add FAQ Item</button>
+                    <button className="btn btn-outline" style={{width:'100%'}} onClick={() => setSiteContent({...siteContent, faq: [...siteContent.faq, {q: 'New Question', a: 'New Answer'}]})}>+ Add FAQ Item</button>
                   </div>
                 </div>
 
                 <div className="glass-panel" style={{ padding: '32px' }}>
-                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Contact Information</h3>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Contact Information (Displayed globally)</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                      <div className="input-group">
                         <label className="input-label">Public Email</label>
@@ -1326,7 +1384,6 @@ export default function AdminDashboard() {
                      </div>
                   </div>
                 </div>
-
               </div>
            </div>
         </div>

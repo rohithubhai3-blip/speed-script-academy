@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Award, Target, Hash, TrendingUp } from 'lucide-react';
+import { Award, Target, Hash, TrendingUp, Youtube, Send, MessageCircle } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { Link } from 'react-router-dom';
@@ -9,6 +9,7 @@ export default function DashboardPage() {
   const user = useStore(state => state.user);
   const [attempts, setAttempts] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [siteContent, setSiteContent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -17,12 +18,14 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [attemptsData, coursesData] = await Promise.all([
+        const [attemptsData, coursesData, contentData] = await Promise.all([
           db.getUserAttempts(user.id),
-          db.getCourses()
+          db.getCourses(),
+          db.getSiteContent()
         ]);
         setAttempts(attemptsData);
         setCourses(coursesData);
+        setSiteContent(contentData);
       } catch (err) {
         console.error("Dashboard Load Error:", err);
       } finally {
@@ -63,11 +66,33 @@ export default function DashboardPage() {
 
   return (
     <div style={{ padding: '0' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Welcome back, {user.name}!</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Here's an overview of your stenography progress.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Here's an overview of your stenography progress.</p>
+          
+          {/* Dynamic Dashboard Socials */}
+          {siteContent?.socials && (siteContent.socials.youtube || siteContent.socials.telegram || siteContent.socials.whatsapp) && (
+            <div style={{ display: 'flex', gap: '10px' }}>
+              {siteContent.socials.youtube && (
+                <a href={siteContent.socials.youtube} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#FF0000', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Youtube size={14} /> Subscribe
+                </a>
+              )}
+              {siteContent.socials.telegram && (
+                <a href={siteContent.socials.telegram} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(0, 136, 204, 0.1)', color: '#0088cc', border: '1px solid rgba(0,136,204,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Send size={14} /> Telegram
+                </a>
+              )}
+              {siteContent.socials.whatsapp && (
+                <a href={`https://wa.me/${siteContent.socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MessageCircle size={14} /> Join Group
+                </a>
+              )}
+            </div>
+          )}
         </div>
+        
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <Link to="/my-results" className="btn btn-outline" style={{ padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             📋 My Results
