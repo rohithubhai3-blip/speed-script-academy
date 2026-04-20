@@ -17,6 +17,8 @@ import ContactPage from './pages/ContactPage';
 import Footer from './components/Footer';
 import useStore from './store/useStore';
 import ErrorBoundary from './components/ErrorBoundary';
+import ToastContainer from './components/ToastContainer';
+import ModalContainer from './components/ModalContainer';
 import { warmupServer } from './services/api';
 
 // Protected Route Component
@@ -49,6 +51,8 @@ function App() {
   return (
     <Router>
       <ErrorBoundary>
+        <ToastContainer />
+        <ModalContainer />
         <div className="app-container">
           <div className="main-content">
             <Navbar />

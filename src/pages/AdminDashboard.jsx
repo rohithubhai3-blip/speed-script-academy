@@ -7,6 +7,9 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview'); // overview | users | courses
+  const addToast = useStore(state => state.addToast);
+  const showModal = useStore(state => state.showModal);
+  const hideModal = useStore(state => state.hideModal);
   const navigate = useNavigate();
 
   const [users, setUsers] = useState([]);
@@ -94,19 +97,25 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       await db.adminCreateUser(newUser.email, newUser.password, newUser.name, newUser.role);
-      alert("User created successfully!");
+      addToast("User created successfully!", "success");
       setNewUser({ name: '', email: '', password: '', role: 'user' });
       loadData();
-    } catch (err) { alert(err.message); }
+    } catch (err) { addToast(err.message, "error"); }
   };
 
   const handleDeleteUser = async (userId) => {
-    if (!window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
-    try {
-      await db.deleteUser(userId);
-      alert("User deleted successfully!");
-      loadData();
-    } catch (err) { alert(err.message); }
+    showModal({
+      title: "Delete User?",
+      message: "Are you sure you want to delete this user? This action cannot be undone.",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await db.deleteUser(userId);
+          addToast("User deleted successfully!", "success");
+          loadData();
+        } catch (err) { addToast(err.message, "error"); }
+      }
+    });
   };
 
   const openAccessModal = (user) => {
@@ -135,20 +144,26 @@ export default function AdminDashboard() {
     setUserCourseAccess(updated);
     try {
       await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, updated);
-      alert('✅ Access granted!');
+      addToast('✅ Access granted!', 'success');
       loadData();
-    } catch (err) { alert(err.message); }
+    } catch (err) { addToast(err.message, 'error'); }
   };
 
   const handleRevokeAccess = async (courseId) => {
-    if (!window.confirm('Remove this course from the user?')) return;
-    const updated = userCourseAccess.filter(a => a.courseId !== courseId);
-    setUserCourseAccess(updated);
-    try {
-      await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, updated);
-      alert('Course access revoked.');
-      loadData();
-    } catch (err) { alert(err.message); }
+    showModal({
+      title: 'Revoke Access?',
+      message: 'Remove this course from the user? They will no longer be able to access the lessons.',
+      type: 'danger',
+      onConfirm: async () => {
+        const updated = userCourseAccess.filter(a => a.courseId !== courseId);
+        setUserCourseAccess(updated);
+        try {
+          await db.updateUserAccess(selectedUserForAccess._id || selectedUserForAccess.id, updated);
+          addToast('Course access revoked.', 'success');
+          loadData();
+        } catch (err) { addToast(err.message, 'error'); }
+      }
+    });
   };
 
   const openResetModal = (user) => {
@@ -173,64 +188,73 @@ export default function AdminDashboard() {
 
   const handleResetPasswordFinal = async () => {
     if (!newPasswordValue || newPasswordValue.length < 6) {
-       return alert("Password must be at least 6 characters.");
+       return addToast("Password must be at least 6 characters.", "warning");
     }
     try {
        await db.resetUserPassword(selectedUserForPasswordReset._id || selectedUserForPasswordReset.id, newPasswordValue);
-       alert("Password reset successfully! 🔐");
+       addToast("Password reset successfully! 🔐", "success");
        setSelectedUserForPasswordReset(null);
-    } catch (err) { alert(err.message); }
+    } catch (err) { addToast(err.message, "error"); }
   };
 
   const handleImpersonate = async (userId) => {
-    if (!window.confirm("Log into this user's account? Your current session will be replaced.")) return;
-    try {
-      const response = await api.post(`/auth/impersonate/${userId}`);
-      if (response.data.token) {
-        // Update local storage using the correct app key: ssa_user
-        // The store reads from 'ssa_user', so we must save the full response there.
-        localStorage.setItem('ssa_user', JSON.stringify(response.data));
-        
-        // Force refresh to reload the entire app with the new user session
-        window.location.href = '/dashboard';
+    showModal({
+      title: "Impersonate User?",
+      message: "Log into this user's account? Your current session will be replaced and you will see the site as they do.",
+      onConfirm: async () => {
+        try {
+          const response = await api.post(`/auth/impersonate/${userId}`);
+          if (response.data.token) {
+            localStorage.setItem('ssa_user', JSON.stringify(response.data));
+            window.location.href = '/dashboard';
+          }
+        } catch (err) {
+          addToast("Impersonation failed: " + (err.response?.data?.message || err.message), "error");
+        }
       }
-    } catch (err) {
-      alert("Impersonation failed: " + (err.response?.data?.message || err.message));
-    }
+    });
   };
 
 
 
   const handleDeleteLesson = async (courseId, levelId, lessonId) => {
-    if (!window.confirm("Are you sure you want to permanently delete this lesson? This cannot be undone.")) return;
-    try {
-      await db.deleteLesson(courseId, levelId, lessonId);
-      alert("Lesson deleted successfully!");
-      loadData();
-    } catch (err) {
-      alert("Failed to delete lesson: " + err.message);
-    }
+    showModal({
+      title: "Delete Lesson?",
+      message: "Are you sure you want to permanently delete this lesson? This cannot be undone.",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await db.deleteLesson(courseId, levelId, lessonId);
+          addToast("Lesson deleted successfully!", "success");
+          loadData();
+        } catch (err) {
+          addToast("Failed to delete lesson: " + err.message, "error");
+        }
+      }
+    });
   };
 
   const handleLaunchCourse = async (course) => {
-    const isFree = window.confirm(`Launch "${course.title}" for FREE? (Click OK for Free, Cancel to set a Price)`);
-    let price = 0;
-    if (!isFree) {
-      const p = window.prompt(`Enter price for "${course.title}":`, "499");
-      if (p === null) return; // cancelled
-      price = parseInt(p, 10);
-      if (isNaN(price) || price < 0) return alert("Invalid price");
-    }
-
-    if (!window.confirm(`Are you sure you want to launch it as ${isFree ? 'FREE' : '₹'+price}? All enrolled users will ${isFree ? 'get immediate access' : 'be notified to pay'}.`)) return;
-
-    try {
-      await db.launchCourse(course.id, isFree, price);
-      alert(`Course launched successfully as ${isFree ? 'FREE' : '₹'+price}!`);
-      loadData();
-    } catch (err) {
-      alert("Launch failed: " + err.message);
-    }
+    showModal({
+      title: `Launch ${course.title}`,
+      message: "Set the price for this course. Enter '0' to launch it for FREE. All enrolled users will be notified.",
+      showInput: true,
+      defaultValue: "499",
+      placeholder: "Enter price (e.g. 499)",
+      onConfirm: async (priceVal) => {
+        const price = parseInt(priceVal, 10);
+        if (isNaN(price) || price < 0) return addToast("Invalid price", "error");
+        
+        const isFree = price === 0;
+        try {
+          await db.launchCourse(course.id, isFree, price);
+          addToast(`Course launched successfully as ${isFree ? 'FREE' : '₹'+price}!`, "success");
+          loadData();
+        } catch (err) {
+          addToast("Launch failed: " + err.message, "error");
+        }
+      }
+    });
   };
 
   const handleSaveCourse = async (e) => {
@@ -239,7 +263,7 @@ export default function AdminDashboard() {
     try {
       if (editingCourseId) {
         await db.editCourse(editingCourseId, newCourse);
-        alert("Course updated!");
+        addToast("Course updated!", "success");
       } else {
         const courseWithId = { 
           ...newCourse, 
@@ -251,12 +275,12 @@ export default function AdminDashboard() {
           ]
         };
         await db.addCourse(courseWithId);
-        alert("Course created successfully!");
+        addToast("Course created successfully!", "success");
       }
       setEditingCourseId(null);
       setNewCourse({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '', stats: { attemptsCount: 0, uniqueStudentsCount: 0, totalWPM: 0, totalAccuracy: 0 } });
       loadData();
-    } catch (err) { alert(err.message); }
+    } catch (err) { addToast(err.message, "error"); }
   };
 
   const handleThumbnailUpload = async (e) => {
@@ -272,22 +296,28 @@ export default function AdminDashboard() {
       const response = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, formData);
       if (response.data.secure_url) {
         setNewCourse(prev => ({ ...prev, thumbnailUrl: response.data.secure_url }));
-        alert('Thumbnail uploaded! ✅');
+        addToast('Thumbnail uploaded! ✅', 'success');
       }
     } catch (err) {
-      alert('Thumbnail upload failed: ' + err.message);
+      addToast('Thumbnail upload failed: ' + err.message, 'error');
     } finally {
       setThumbnailUploading(false);
     }
   };
 
   const handleDeleteCourse = async (courseId) => {
-    if (!window.confirm("Are you sure you want to delete this course and all its lessons?")) return;
-    try {
-      await db.deleteCourse(courseId);
-      alert("Course deleted successfully!");
-      loadData();
-    } catch (err) { alert(err.message); }
+    showModal({
+      title: "Delete Course?",
+      message: "Are you sure you want to delete this course and all its lessons? This action is permanent.",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await db.deleteCourse(courseId);
+          addToast("Course deleted successfully!", "success");
+          loadData();
+        } catch (err) { addToast(err.message, "error"); }
+      }
+    });
   };
 
   const startEditCourse = (c) => {
@@ -998,9 +1028,9 @@ export default function AdminDashboard() {
                   <button 
                     type="button" 
                     onClick={() => {
-                      if(!newLesson.mediaUrl) return alert("Please enter a link first");
+                      if(!newLesson.mediaUrl) return addToast("Please enter a link first", "warning");
                       const audio = new Audio(newLesson.mediaUrl);
-                      audio.play().catch(e => alert("Could not play. Link might be broken or private: " + e.message));
+                      audio.play().catch(e => addToast("Could not play. Link might be broken or private: " + e.message, "error"));
                     }}
                     className="btn btn-outline"
                     style={{ padding: '0 12px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)', borderColor: 'var(--primary)', borderStyle: 'dotted' }}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, Lock, CreditCard, CheckCircle, BookOpen, Clock, ChevronDown, ChevronUp, Zap, Shield, Activity, Users } from 'lucide-react';
+import { Play, Lock, CreditCard, CheckCircle, BookOpen, Clock, ChevronDown, ChevronUp, Zap, Shield, Activity, Users, Eye } from 'lucide-react';
 import useStore from '../store/useStore';
 
 // Default gradient thumbnails when no image is uploaded
@@ -20,6 +20,8 @@ export default function CoursesPage() {
   const [expandedCourse, setExpandedCourse] = useState(null);
   const user = useStore(state => state.user);
   const updateUser = useStore(state => state.updateUser);
+  const addToast = useStore(state => state.addToast);
+  const showModal = useStore(state => state.showModal);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export default function CoursesPage() {
   // ── SKELETON ──────────────────────────────────────────────
   const handleEnroll = async (courseId) => {
     if (!user) {
-      alert("Please login to enroll.");
+      addToast("Please login to enroll.", "warning");
       navigate('/login');
       return;
     }
@@ -60,10 +62,78 @@ export default function CoursesPage() {
       const res = await db.enrollCourse(courseId);
       // Update local state to reflect enrollment
       setCourses(courses.map(c => c.id === courseId ? res.course : c));
-      alert("Successfully Pre-Registered! You will be notified when the course launches.");
+      addToast("Successfully Pre-Registered! You will be notified when the course launches.", "success");
     } catch (err) {
-      alert("Failed to enroll: " + (err.response?.data?.message || err.message));
+      addToast("Failed to enroll: " + (err.response?.data?.message || err.message), "error");
     }
+  };
+
+  const handleViewCourseDetails = (course, isOwned, price, isPending, fallbackBg) => {
+    showModal({
+      title: course.title,
+      message: (
+        <div style={{ textAlign: 'left' }}>
+          <div style={{ 
+            width: '100%', 
+            height: '320px', 
+            borderRadius: '20px', 
+            overflow: 'hidden', 
+            marginBottom: '32px',
+            background: fallbackBg,
+            boxShadow: 'var(--shadow-drop)',
+            border: '1px solid var(--border-color)'
+          }}>
+            {(course.thumbnailUrl || course.thumbnail) ? (
+              <img src={course.thumbnailUrl || course.thumbnail} alt={course.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <BookOpen size={80} color="rgba(255,255,255,0.25)" />
+              </div>
+            )}
+          </div>
+          
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.8rem', padding: '6px 16px', borderRadius: '100px', background: 'rgba(14,165,233,0.1)', color: 'var(--primary)', fontWeight: 700, border: '1px solid rgba(14,165,233,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <BookOpen size={14} /> {totalLessons(course)} Lessons
+            </span>
+            {course.price > 0 && <span style={{ fontSize: '0.8rem', padding: '6px 16px', borderRadius: '100px', background: 'rgba(16,185,129,0.1)', color: 'var(--success)', fontWeight: 700, border: '1px solid rgba(16,185,129,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>Premium Access</span>}
+            {course.status === 'Upcoming' && <span style={{ fontSize: '0.8rem', padding: '6px 16px', borderRadius: '100px', background: 'rgba(139,92,246,0.1)', color: '#8b5cf6', fontWeight: 700, border: '1px solid rgba(139,92,246,0.2)' }}>✨ Upcoming Build</span>}
+          </div>
+
+          <h4 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            Course Overview
+          </h4>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: '1.8', marginBottom: '32px', whiteSpace: 'pre-wrap' }}>
+            {course.description || "No description provided for this course. Start practicing to master your shorthand skills."}
+          </p>
+
+          <div style={{ height: '1px', background: 'var(--border-color)', marginBottom: '24px' }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Course Fee</span>
+              <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                {isOwned ? 'Purchased' : (course.price > 0 ? `₹${course.price}` : 'FREE')}
+              </span>
+            </div>
+            {!isOwned && (
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  if (course.status === 'Upcoming') handleEnroll(course.id);
+                  else navigate(`/checkout/${course.id}`);
+                }}
+                disabled={isPending}
+              >
+                {course.status === 'Upcoming' ? 'Pre-Register Now' : 'Enroll Now'}
+              </button>
+            )}
+          </div>
+        </div>
+      ),
+      confirmText: "Back to Courses",
+      showCancel: false
+    });
   };
 
   if (loading) return (
@@ -161,6 +231,21 @@ export default function CoursesPage() {
         .lesson-link:hover .play-btn {
           transform: scale(1.15);
         }
+        .view-details-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0.4);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+        .thumbnail-wrap:hover .view-details-overlay {
+          opacity: 1;
+        }
       `}</style>
 
       {/* PAGE HEADER */}
@@ -207,6 +292,14 @@ export default function CoursesPage() {
                     <BookOpen size={64} color="rgba(255,255,255,0.25)" />
                   </div>
                 )}
+                <div className="view-details-overlay" onClick={() => handleViewCourseDetails(course, isOwned, course.price, isPending, fallbackBg)}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'white' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)' }}>
+                      <Eye size={24} />
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>View Details</span>
+                  </div>
+                </div>
                 <div className="thumbnail-overlay" />
 
                 {/* Status pill on thumbnail */}

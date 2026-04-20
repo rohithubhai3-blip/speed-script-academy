@@ -8,6 +8,7 @@ export default function CheckoutPage() {
   const { courseId } = useParams();
   const navigate = useNavigate();
   const user = useStore(state => state.user);
+  const addToast = useStore(state => state.addToast);
   
   const [course, setCourse] = useState(null);
   const [settings, setSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '' });
@@ -59,10 +60,10 @@ export default function CheckoutPage() {
       window.open(whatsappUrl, '_blank');
       
       setHasPendingRequest(true);
-      alert("Purchase request sent! Please ensure you have sent the screenshot on WhatsApp. Access will be granted after manual verification.");
+      addToast("Purchase request sent! Please ensure you have sent the screenshot on WhatsApp. Access will be granted after manual verification.", "success");
       navigate('/dashboard');
     } catch (err) {
-      alert("Error: " + err.message);
+      addToast("Error: " + err.message, "error");
     } finally {
       setProcessing(false);
     }
@@ -70,7 +71,7 @@ export default function CheckoutPage() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    alert("UPI ID Copied!");
+    addToast("UPI ID Copied!", "info");
   };
 
   const handleApplyPromo = async () => {
@@ -80,7 +81,7 @@ export default function CheckoutPage() {
     try {
       const updatedUser = await db.redeemPromoCode(user.id, promoCode);
       useStore.getState().updateUser(updatedUser);
-      alert("Promo Code Applied Successfully! Course unlocked.");
+      addToast("Promo Code Applied Successfully! Course unlocked.", "success");
       navigate('/courses');
     } catch (err) {
       setPromoError(err.message);

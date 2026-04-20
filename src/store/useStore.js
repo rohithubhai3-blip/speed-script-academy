@@ -27,6 +27,31 @@ const useStore = create((set) => ({
     set({ user: null });
   },
 
+  toasts: [],
+  modal: null,
+
+  // Toast Management
+  addToast: (message, type = 'info') => {
+    const id = Date.now();
+    set((state) => ({
+      toasts: [...state.toasts, { id, message, type }]
+    }));
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+      set((state) => ({
+        toasts: state.toasts.filter(t => t.id !== id)
+      }));
+    }, 4000);
+  },
+
+  removeToast: (id) => set((state) => ({
+    toasts: state.toasts.filter(t => t.id !== id)
+  })),
+
+  // Modal Management
+  showModal: (config) => set({ modal: config }),
+  hideModal: () => set({ modal: null }),
+
   setActiveTest: (testData) => set({ activeTest: testData }),
   
   clearActiveTest: () => set({ activeTest: null }),
