@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Award, Target, Hash, TrendingUp, Youtube, Send, MessageCircle } from 'lucide-react';
+import { Award, Target, Hash, TrendingUp, PlayCircle, Send, MessageCircle } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { Link } from 'react-router-dom';
@@ -76,7 +76,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', gap: '10px' }}>
               {siteContent.socials.youtube && (
                 <a href={siteContent.socials.youtube} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#FF0000', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Youtube size={14} /> Subscribe
+                  <PlayCircle size={14} /> Subscribe
                 </a>
               )}
               {siteContent.socials.telegram && (

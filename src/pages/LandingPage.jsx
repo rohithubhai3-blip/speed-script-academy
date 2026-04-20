@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { 
   ArrowRight, Activity, Zap, ShieldCheck, Server, 
   ChevronDown, ChevronUp, CheckCircle, Smartphone,
-  Youtube, Send, MessageCircle, Star 
+  PlayCircle, Send, MessageCircle, Star 
 } from 'lucide-react';
 import useStore from '../store/useStore';
 import { db } from '../data/db';
@@ -106,7 +106,7 @@ export default function LandingPage() {
             <div className="animate-fade-in" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '40px', animationDelay: '0.5s' }}>
               {content.socials.youtube && (
                 <a href={content.socials.youtube} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#FF0000', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Youtube size={16} /> YouTube
+                  <PlayCircle size={16} /> YouTube
                 </a>
               )}
               {content.socials.telegram && (
