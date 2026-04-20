@@ -18,6 +18,7 @@ export default function CoursesPage() {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedCourse, setExpandedCourse] = useState(null);
+  const [expandedDescs, setExpandedDescs] = useState({}); // Tracking which descriptions are expanded
   const user = useStore(state => state.user);
   const updateUser = useStore(state => state.updateUser);
   const addToast = useStore(state => state.addToast);
@@ -132,6 +133,48 @@ export default function CoursesPage() {
         </div>
       ),
       confirmText: "Back to Courses",
+      showCancel: false
+    });
+  };
+
+  const handleToggleDesc = (e, courseId) => {
+    e.stopPropagation();
+    setExpandedDescs(prev => ({
+      ...prev,
+      [courseId]: !prev[courseId]
+    }));
+  };
+
+  const handleViewFullImage = (course, fallbackBg) => {
+    showModal({
+      title: "Course Thumbnail Preview",
+      message: (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            width: '100%', 
+            minHeight: '200px',
+            borderRadius: '16px', 
+            overflow: 'hidden', 
+            background: fallbackBg,
+            boxShadow: 'var(--shadow-lg)',
+            border: '1px solid var(--border-color)'
+          }}>
+            {(course.thumbnailUrl || course.thumbnail) ? (
+              <img 
+                src={course.thumbnailUrl || course.thumbnail} 
+                alt={course.title} 
+                style={{ width: '100%', height: 'auto', display: 'block' }} // height auto = original ratio
+              />
+            ) : (
+              <div style={{ padding: '80px 0' }}>
+                <BookOpen size={80} color="rgba(255,255,255,0.25)" />
+              </div>
+            )}
+          </div>
+          <p style={{ marginTop: '16px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Tap outside to close</p>
+        </div>
+      ),
+      confirmText: "Close Preview",
       showCancel: false
     });
   };
@@ -292,12 +335,12 @@ export default function CoursesPage() {
                     <BookOpen size={64} color="rgba(255,255,255,0.25)" />
                   </div>
                 )}
-                <div className="view-details-overlay" onClick={() => handleViewCourseDetails(course, isOwned, course.price, isPending, fallbackBg)}>
+                <div className="view-details-overlay" onClick={() => handleViewFullImage(course, fallbackBg)}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'white' }}>
                     <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)' }}>
                       <Eye size={24} />
                     </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>View Details</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>View Full Cover</span>
                   </div>
                 </div>
                 <div className="thumbnail-overlay" />
@@ -337,10 +380,27 @@ export default function CoursesPage() {
                   {course.title}
                 </h2>
                 {course.description && (
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5,
-                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {course.description}
-                  </p>
+                  <div>
+                    <p style={{ 
+                      fontSize: '0.85rem', 
+                      color: 'var(--text-secondary)', 
+                      margin: 0, 
+                      lineHeight: 1.5,
+                      display: expandedDescs[course.id] ? 'block' : '-webkit-box', 
+                      WebkitLineClamp: 2, 
+                      WebkitBoxOrient: 'vertical', 
+                      overflow: 'hidden',
+                      whiteSpace: expandedDescs[course.id] ? 'pre-wrap' : 'normal'
+                    }}>
+                      {course.description}
+                    </p>
+                    <button 
+                      onClick={(e) => handleToggleDesc(e, course.id)}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, padding: 0, marginTop: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      {expandedDescs[course.id] ? <><ChevronUp size={12}/> Show Less</> : <><ChevronDown size={12}/> Read More</>}
+                    </button>
+                  </div>
                 )}
 
                 {/* Level pills */}
