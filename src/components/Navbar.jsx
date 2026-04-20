@@ -24,24 +24,31 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        .navbar {
+        .navbar-wrapper {
           position: sticky;
-          top: 0;
+          top: 16px;
           z-index: 50;
+          padding: 0 20px;
+          display: flex;
+          justify-content: center;
+        }
+        .navbar {
           background: var(--glass-bg);
-          backdrop-filter: blur(18px);
-          -webkit-backdrop-filter: blur(18px);
-          border-bottom: 1px solid var(--glass-border);
-          box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid var(--glass-border);
+          border-radius: var(--radius-full);
+          box-shadow: var(--shadow-drop);
+          width: 100%;
+          max-width: 1400px;
+          transition: all 0.3s ease;
         }
         .navbar-inner {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0 40px;
+          padding: 0 24px;
           height: 64px;
-          max-width: 1400px;
-          margin: 0 auto;
           width: 100%;
         }
         .nav-logo {
@@ -172,23 +179,24 @@ export default function Navbar() {
         }
       `}</style>
 
-      <nav className="navbar">
-        <div className="navbar-inner">
-          {/* LOGO */}
-          <Link to="/" className="nav-logo" onClick={closeMenu}>
-            <div className="nav-logo-badge">
-              <Zap size={14} style={{ display: 'inline' }} /> SSA
-            </div>
-            <span className="nav-logo-text">Speed Script Academy</span>
-          </Link>
+      <div className="navbar-wrapper">
+        <nav className="navbar">
+          <div className="navbar-inner">
+            {/* LOGO */}
+            <Link to="/" className="nav-logo" onClick={closeMenu}>
+              <div className="nav-logo-badge">
+                <Zap size={14} style={{ display: 'inline' }} /> SSA
+              </div>
+              <span className="nav-logo-text">Speed Script Academy</span>
+            </Link>
 
-          {/* DESKTOP LINKS */}
-          <div className="desktop-nav-links">
-            <Link to="/leaderboard" className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`}>Leaderboard</Link>
-            <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`}>About</Link>
-            <Link to="/contact" className={`nav-link ${isActive('/contact') ? 'active' : ''}`}>Contact</Link>
+            {/* DESKTOP LINKS */}
+            <div className="desktop-nav-links">
+              <Link to="/leaderboard" className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`}>Leaderboard</Link>
+              <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`}>About</Link>
+              <Link to="/contact" className={`nav-link ${isActive('/contact') ? 'active' : ''}`}>Contact</Link>
 
-            {user ? (
+              {user ? (
               <>
                 <Link to={user.role === 'admin' ? '/admin' : '/dashboard'}
                   className={`nav-link ${(isActive('/dashboard') || isActive('/admin')) ? 'active' : ''}`}>
@@ -243,8 +251,9 @@ export default function Navbar() {
               {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
-        </div>
-      </nav>
+          </div>
+        </nav>
+      </div>
 
       {/* MOBILE SLIDE-DOWN MENU */}
       <div className={`mobile-menu ${menuOpen ? 'open' : ''}`}>

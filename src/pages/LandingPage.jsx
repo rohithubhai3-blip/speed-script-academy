@@ -40,30 +40,29 @@ export default function LandingPage() {
         flexDirection: 'column', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        minHeight: '80vh', 
+        minHeight: '85vh', 
         textAlign: 'center', 
-        padding: '100px 20px 60px',
+        padding: '120px 20px 80px',
         position: 'relative'
       }}>
         <div style={{ maxWidth: '900px', zIndex: 10 }}>
-          <div className="badge" style={{ marginBottom: '20px' }}>Ranked #1 Shorthand Platform</div>
-          <h1 style={{ 
-            fontSize: '4.5rem', 
+          <div className="badge animate-fade-in" style={{ marginBottom: '24px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', display: 'inline-block', fontWeight: 600, fontSize: '0.9rem' }}>✨ Ranked #1 Shorthand Platform</div>
+          <h1 className="animate-fade-in" style={{ 
+            fontSize: 'clamp(3rem, 6vw, 5.5rem)', 
             fontWeight: 800, 
             marginBottom: '24px', 
             lineHeight: 1.1,
-            background: 'linear-gradient(to right, var(--primary), var(--secondary))', 
-            WebkitBackgroundClip: 'text', 
-            WebkitTextFillColor: 'transparent' 
+            animationDelay: '0.1s'
           }}>
-            {content.hero.title}
+            Master Shorthand with <br />
+            <span className="text-gradient glow-text" style={{ paddingBottom: '10px' }}>AI-Powered Precision</span>
           </h1>
           
-          <p style={{ fontSize: '1.4rem', color: 'var(--text-secondary)', marginBottom: '40px', lineHeight: 1.6 }}>
+          <p className="animate-fade-in" style={{ fontSize: '1.4rem', color: 'var(--text-secondary)', marginBottom: '40px', lineHeight: 1.6, animationDelay: '0.2s', maxWidth: '700px', margin: '0 auto 40px' }}>
             {content.hero.subtitle}
           </p>
 
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+          <div className="animate-fade-in" style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', animationDelay: '0.3s' }}>
             {user ? (
               <Link to={user.role === 'admin' ? '/admin' : '/dashboard'} className="btn btn-primary" style={{ padding: '16px 40px', fontSize: '1.1rem' }}>
                 Go to Dashboard <ArrowRight size={20} />
@@ -83,29 +82,51 @@ export default function LandingPage() {
       </section>
 
       {/* Stats Section */}
-      <section style={{ padding: '40px 20px', background: 'rgba(var(--primary-rgb), 0.03)', borderY: '1px solid var(--border-color)' }}>
-        <div className="container" style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '30px' }}>
+      <section style={{ padding: '60px 20px', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--border-color), transparent)' }} />
+        <div className="container" style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '30px', maxWidth: '1000px', margin: '0 auto' }}>
           {content.stats.map((stat, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--primary)' }}>{stat.value}</div>
-              <div style={{ fontSize: '1rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>{stat.label}</div>
+            <div key={i} style={{ textAlign: 'center', padding: '20px' }}>
+              <div className="text-gradient" style={{ fontSize: '3.5rem', fontWeight: 800, marginBottom: '8px' }}>{stat.value}</div>
+              <div style={{ fontSize: '0.95rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 600 }}>{stat.label}</div>
             </div>
           ))}
         </div>
+        <div style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: '1px', background: 'linear-gradient(90deg, transparent, var(--border-color), transparent)' }} />
       </section>
 
-      {/* Features Grid */}
-      <section style={{ padding: '100px 20px' }}>
-        <div className="container text-center">
-          <h2 style={{ fontSize: '3rem', marginBottom: '60px' }}>Premium Student Experience</h2>
-          <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' }}>
+      {/* Features Bento Grid */}
+      <section style={{ padding: '120px 20px' }}>
+        <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '80px' }}>
+            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', marginBottom: '16px' }}>Premium <span className="text-gradient">Student Experience</span></h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>Everything you need to master English shorthand speed and accuracy.</p>
+          </div>
+          
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
+            gap: '24px' 
+          }}>
             {content.features.map((feature, i) => (
-              <div key={i} className="glass-card" style={{ flex: '1 1 250px', padding: '40px 30px', textAlign: 'left', transition: 'transform 0.3s ease' }}>
-                <div style={{ marginBottom: '20px', color: 'var(--primary)' }}>
+              <div key={i} className="glass-card" style={{ 
+                padding: '40px', 
+                display: 'flex', 
+                flexDirection: 'column',
+                gridColumn: i === 0 || i === 3 ? 'span 2' : 'span 1' /* Bento Grid sizing */
+              }}>
+                <div style={{ 
+                  marginBottom: '24px', 
+                  color: 'var(--primary)', 
+                  background: 'rgba(59, 130, 246, 0.1)', 
+                  width: '64px', height: '64px', 
+                  borderRadius: '16px', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                }}>
                   {iconMap[feature.icon] || <CheckCircle size={32} />}
                 </div>
-                <h3 style={{ fontSize: '1.5rem', marginBottom: '12px' }}>{feature.title}</h3>
-                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>{feature.desc}</p>
+                <h3 style={{ fontSize: '1.8rem', marginBottom: '16px' }}>{feature.title}</h3>
+                <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7, fontSize: '1.1rem' }}>{feature.desc}</p>
               </div>
             ))}
           </div>
