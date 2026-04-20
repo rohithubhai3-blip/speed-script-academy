@@ -224,14 +224,15 @@ export default function CoursesPage() {
         }
         .thumbnail-wrap {
           position: relative;
-          height: 190px;
+          height: auto;
           overflow: hidden;
           flex-shrink: 0;
+          background: var(--bg-base);
         }
         .thumbnail-img {
           width: 100%;
-          height: 100%;
-          object-fit: cover;
+          height: auto;
+          display: block;
           transition: transform 0.4s ease;
         }
         .course-card:hover .thumbnail-img {
@@ -380,27 +381,15 @@ export default function CoursesPage() {
                   {course.title}
                 </h2>
                 {course.description && (
-                  <div>
-                    <p style={{ 
-                      fontSize: '0.85rem', 
-                      color: 'var(--text-secondary)', 
-                      margin: 0, 
-                      lineHeight: 1.5,
-                      display: expandedDescs[course.id] ? 'block' : '-webkit-box', 
-                      WebkitLineClamp: 2, 
-                      WebkitBoxOrient: 'vertical', 
-                      overflow: 'hidden',
-                      whiteSpace: expandedDescs[course.id] ? 'pre-wrap' : 'normal'
-                    }}>
-                      {course.description}
-                    </p>
-                    <button 
-                      onClick={(e) => handleToggleDesc(e, course.id)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, padding: 0, marginTop: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      {expandedDescs[course.id] ? <><ChevronUp size={12}/> Show Less</> : <><ChevronDown size={12}/> Read More</>}
-                    </button>
-                  </div>
+                  <p style={{ 
+                    fontSize: '0.85rem', 
+                    color: 'var(--text-secondary)', 
+                    margin: 0, 
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {course.description}
+                  </p>
                 )}
 
                 {/* Level pills */}
