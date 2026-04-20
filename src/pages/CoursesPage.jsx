@@ -274,15 +274,17 @@ export default function CoursesPage() {
                     <Activity size={14} /> 
                     <span>Tests Conducted: {(course.stats?.attemptsCount || 0).toLocaleString()} times</span>
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '22px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> {course.stats?.uniqueStudentsCount || 0} Students Attempted</span>
-                    {course.stats?.attemptsCount > 0 && (
-                      <>
-                        <span>🎯 Avg. Acc: {Math.round((course.stats.totalAccuracy / course.stats.attemptsCount) || 0)}%</span>
-                        <span>⚡ Avg. WPM: {Math.round((course.stats.totalWPM / course.stats.attemptsCount) || 0)}</span>
-                      </>
-                    )}
-                  </div>
+                  {course.stats?.attemptsCount > 0 ? (
+                    <div style={{ display: 'flex', gap: '12px', fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '22px' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> {course.stats?.uniqueStudentsCount || 0} Students Attempted</span>
+                      <span>🎯 Avg. Acc: {Math.round((course.stats.totalAccuracy / course.stats.attemptsCount) || 0)}%</span>
+                      <span>⚡ Avg. WPM: {Math.round((course.stats.totalWPM / course.stats.attemptsCount) || 0)}</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '22px', fontStyle: 'italic', opacity: 0.8 }}>
+                      ✨ Be the first to attempt this course!
+                    </div>
+                  )}
                 </div>
 
                 {/* ── ACTION ── */}
