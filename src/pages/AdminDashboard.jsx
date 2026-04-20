@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [globalSettings, setGlobalSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '' });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [siteContent, setSiteContent] = useState(null);
+  const [inquiries, setInquiries] = useState([]);
   const [approvalDurations, setApprovalDurations] = useState({}); // reqId -> durationDays
 
   // Forms states
@@ -75,6 +76,7 @@ export default function AdminDashboard() {
         db.getGlobalSettings(),
         db.getPendingRequests(),
         db.getSiteContent(),
+        db.getInquiries(),
       ]);
       setUsers(u);
       setAttempts(a);
@@ -83,6 +85,7 @@ export default function AdminDashboard() {
       setGlobalSettings(s);
       setPendingRequests(r);
       setSiteContent(sc);
+      setInquiries(i);
     } catch (err) {
       console.error("Dashboard data load failed:", err);
     } finally {
@@ -102,6 +105,23 @@ export default function AdminDashboard() {
       setNewUser({ name: '', email: '', password: '', role: 'user' });
       loadData();
     } catch (err) { addToast(err.message, "error"); }
+  };
+
+  const handleDeleteInquiry = async (id) => {
+    showModal({
+      title: "Delete Inquiry?",
+      message: "Are you sure you want to remove this message from the inbox?",
+      type: "danger",
+      onConfirm: async () => {
+        try {
+          await db.deleteInquiry(id);
+          addToast("Message deleted", "success");
+          loadData();
+        } catch (err) {
+          addToast("Failed to delete", "error");
+        }
+      }
+    });
   };
 
   const handleDeleteUser = async (userId) => {
@@ -540,6 +560,9 @@ export default function AdminDashboard() {
           <button className={`btn ${activeTab === 'cms' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('cms')}>
             <Edit3 size={18} /> Site Content (CMS)
           </button>
+          <button className={`btn ${activeTab === 'inbox' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('inbox')}>
+            <MessageSquare size={18} /> Inbox {inquiries.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '50%', fontSize: '0.7rem' }}>{inquiries.length}</span>}
+          </button>
         </div>
       </div>
 
@@ -565,6 +588,81 @@ export default function AdminDashboard() {
               <h3 style={{ fontSize: '2rem' }}>{attempts.length}</h3>
             </div>
           </div>
+
+          {/* INQUIRIES STAT */}
+          <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }} onClick={() => setActiveTab('inbox')}>
+            <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--secondary)' }}>
+              <MessageSquare size={28} />
+            </div>
+            <div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>New Inquiries</p>
+              <h3 style={{ fontSize: '2rem' }}>{inquiries.length}</h3>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INBOX TAB */}
+      {activeTab === 'inbox' && (
+        <div className="glass-panel" style={{ padding: '32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+            <div>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>User Inquiries</h2>
+              <p style={{ color: 'var(--text-secondary)' }}>Manage messages received from the Contact Page.</p>
+            </div>
+            {inquiries.length > 0 && (
+              <button onClick={() => inquiries.forEach(msg => handleDeleteInquiry(msg.id))} className="btn btn-outline" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>
+                Clear All
+              </button>
+            )}
+          </div>
+
+          {inquiries.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px', border: '2px dashed var(--border-color)', borderRadius: '24px' }}>
+              <div style={{ width: '80px', height: '80px', background: 'rgba(255,255,255,0.03)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <MessageSquare size={32} color="var(--text-muted)" />
+              </div>
+              <h3 style={{ color: 'var(--text-primary)' }}>Your inbox is empty</h3>
+              <p style={{ color: 'var(--text-secondary)' }}>When users send messages via the Contact Page, they will appear here.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {inquiries.map(msg => (
+                <div key={msg.id} style={{ 
+                  background: 'rgba(255,255,255,0.02)', 
+                  padding: '24px', 
+                  borderRadius: '20px', 
+                  border: '1px solid var(--border-color)',
+                  transition: 'transform 0.2s',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px' }}>{msg.name}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Mail size={14} /> {msg.email}
+                        <span style={{ color: 'var(--text-muted)' }}>•</span>
+                        <span>{new Date(msg.timestamp).toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <button onClick={() => handleDeleteInquiry(msg.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', opacity: 0.6 }}>
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  <div style={{ 
+                    background: 'rgba(0,0,0,0.2)', 
+                    padding: '16px', 
+                    borderRadius: '12px', 
+                    color: 'var(--text-primary)', 
+                    fontSize: '0.95rem',
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    {msg.message}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

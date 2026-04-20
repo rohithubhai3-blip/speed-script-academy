@@ -317,6 +317,31 @@ export const db = {
     clearCache('cms');
     const res = await api.post('/cms', data, { headers: getAuthHeader() });
     return res.data;
+  },
+
+  // --- CONTACT INQUIRIES ---
+  async submitInquiry(data) {
+    // We'll store inquiries in the CMS state for now as a persistent collection
+    // In a real app, this would be its own endpoint, but here we piggyback on CMS
+    const current = await this.getSiteContent();
+    const inbox = current.inbox || [];
+    const newInbox = [{ ...data, id: Date.now(), timestamp: new Date().toISOString(), read: false }, ...inbox];
+    
+    // Save back to CMS
+    await this.updateSiteContent({ ...current, inbox: newInbox });
+    return { success: true };
+  },
+
+  async getInquiries() {
+    const current = await this.getSiteContent();
+    return current.inbox || [];
+  },
+
+  async deleteInquiry(id) {
+    const current = await this.getSiteContent();
+    const newInbox = (current.inbox || []).filter(msg => msg.id !== id);
+    await this.updateSiteContent({ ...current, inbox: newInbox });
+    return { success: true };
   }
 };
 
