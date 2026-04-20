@@ -56,6 +56,32 @@ export default function LandingPage() {
   return (
     <div style={{ paddingBottom: '0px' }}>
       
+      {/* Announcement Banner */}
+      {content.banner?.enabled && (
+        <div style={{ 
+          background: 'linear-gradient(90deg, var(--primary), var(--secondary))', 
+          color: 'white', 
+          padding: '10px 20px', 
+          textAlign: 'center', 
+          fontWeight: 700, 
+          fontSize: '0.9rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100
+        }}>
+          <span>{content.banner.text}</span>
+          {content.banner.link && (
+            <a href={content.banner.link} className="btn" style={{ padding: '4px 12px', fontSize: '0.75rem', background: 'white', color: 'var(--primary)' }}>
+              Check Now
+            </a>
+          )}
+        </div>
+      )}
+
       {/* Hero Section */}
       <section style={{ 
         display: 'flex', 
@@ -68,7 +94,10 @@ export default function LandingPage() {
         position: 'relative'
       }}>
         <div style={{ maxWidth: '900px', zIndex: 10 }}>
-          <div className="badge animate-fade-in" style={{ marginBottom: '24px', background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', display: 'inline-block', fontWeight: 600, fontSize: '0.9rem' }}>✨ Ranked #1 Shorthand Platform</div>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <div className="badge animate-fade-in" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', fontWeight: 600, fontSize: '0.9rem' }}>✨ Ranked #1 Shorthand Platform</div>
+            <div className="badge animate-fade-in" style={{ animationDelay: '0.1s', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.2)', padding: '8px 16px', borderRadius: 'var(--radius-full)', fontWeight: 700, fontSize: '0.9rem', boxShadow: '0 0 15px rgba(34, 197, 94, 0.2)' }}>🎁 FREE COURSES AVAILABLE</div>
+          </div>
           <h1 className="animate-fade-in" style={{ 
             fontSize: 'clamp(3rem, 6vw, 5.5rem)', 
             fontWeight: 800, 

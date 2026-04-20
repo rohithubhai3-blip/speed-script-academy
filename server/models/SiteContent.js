@@ -57,6 +57,11 @@ const siteContentSchema = new mongoose.Schema({
     text: String,
     stars: { type: Number, default: 5 }
   }],
+  banner: {
+    enabled: { type: Boolean, default: false },
+    text: { type: String, default: '' },
+    link: { type: String, default: '' }
+  },
   updatedAt: { type: Date, default: Date.now }
 });
 

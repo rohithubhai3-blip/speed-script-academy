@@ -94,6 +94,11 @@ const INITIAL_SITE_CONTENT = {
     telegram: "https://t.me/speedscript",
     whatsapp: "919876543210"
   },
+  banner: {
+    enabled: true,
+    text: "🚀 2026 Batch Now Open! Special Enrollment Discount for First 100 Students!",
+    link: "/register"
+  },
   reviews: [
     { name: "Amit Kumar", role: "100 WPM, SSC Qualifier", text: "The accuracy tracking here is exactly what I needed to clear my SSC grade C exam. Unmatched quality!", stars: 5 },
     { name: "Priya Sharma", role: "80 WPM, Beginner", text: "Very structured courses. Moving from 60 to 80 WPM felt totally natural with these dictations.", stars: 5 },

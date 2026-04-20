@@ -1301,6 +1301,70 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </div>
+                <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Site-wide Banner (Alert Bar)</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={siteContent.banner?.enabled || false} 
+                        onChange={e => setSiteContent({...siteContent, banner: {...siteContent.banner, enabled: e.target.checked}})} 
+                        style={{ width: '20px', height: '20px' }}
+                      />
+                      <label style={{ fontWeight: 600 }}>Enable Top Announcement Banner</label>
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Banner Text (e.g. 2026 Batch Now Open!)</label>
+                      <input type="text" className="input-field" value={siteContent.banner?.text || ''} onChange={e => setSiteContent({...siteContent, banner: {...siteContent.banner, text: e.target.value}})} />
+                    </div>
+                    <div className="input-group">
+                      <label className="input-label">Banner Link (Button URL)</label>
+                      <input type="text" className="input-field" value={siteContent.banner?.link || ''} onChange={e => setSiteContent({...siteContent, banner: {...siteContent.banner, link: e.target.value}})} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="glass-panel" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>Features Grid Editor</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {(siteContent.features || []).map((f, idx) => (
+                      <div key={idx} style={{ padding: '16px', background: 'var(--bg-base)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                           <span style={{ fontWeight: 'bold' }}>Feature {idx + 1}</span>
+                           <button onClick={() => {
+                             const newFeats = siteContent.features.filter((_, i) => i !== idx);
+                             setSiteContent({...siteContent, features: newFeats});
+                           }} style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer' }}>Remove</button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                          <div>
+                            <label className="input-label" style={{fontSize: '0.75rem'}}>Icon (Activity, Zap, ShieldCheck, Server, Smartphone)</label>
+                            <input type="text" className="input-field" value={f.icon || ''} onChange={e => {
+                               const newFeats = [...siteContent.features];
+                               newFeats[idx].icon = e.target.value;
+                               setSiteContent({...siteContent, features: newFeats});
+                            }} />
+                          </div>
+                          <div>
+                            <label className="input-label" style={{fontSize: '0.75rem'}}>Title</label>
+                            <input type="text" className="input-field" value={f.title || ''} onChange={e => {
+                               const newFeats = [...siteContent.features];
+                               newFeats[idx].title = e.target.value;
+                               setSiteContent({...siteContent, features: newFeats});
+                            }} />
+                          </div>
+                        </div>
+                        <label className="input-label" style={{fontSize: '0.75rem'}}>Description</label>
+                        <textarea className="input-field" style={{ minHeight: '60px' }} value={f.desc || ''} onChange={e => {
+                           const newFeats = [...siteContent.features];
+                           newFeats[idx].desc = e.target.value;
+                           setSiteContent({...siteContent, features: newFeats});
+                        }} />
+                      </div>
+                    ))}
+                    <button className="btn btn-outline" style={{width:'100%'}} onClick={() => setSiteContent({...siteContent, features: [...(siteContent.features || []), {icon: 'Zap', title: 'New Feature', desc: ''}]})}>+ Add New Feature</button>
+                  </div>
+                </div>
               </div>
 
               {/* Dynamic Lists Section */}
