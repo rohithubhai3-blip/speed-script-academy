@@ -4,6 +4,7 @@ import api from '../services/api';
 import axios from 'axios';
 import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import useStore from '../store/useStore';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview'); // overview | users | courses
