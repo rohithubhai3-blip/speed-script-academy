@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 
@@ -24,6 +24,10 @@ export default function AdminDashboard() {
   const [siteContent, setSiteContent] = useState(null);
   const [inquiries, setInquiries] = useState([]);
   const [approvalDurations, setApprovalDurations] = useState({}); // reqId -> durationDays
+  
+  // Enrollments State
+  const [enrollmentSearch, setEnrollmentSearch] = useState('');
+  const [enrollmentType, setEnrollmentType] = useState('active'); // active | expired
 
   // Forms states
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -563,6 +567,9 @@ export default function AdminDashboard() {
           <button className={`btn ${activeTab === 'inbox' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('inbox')}>
             <MessageSquare size={18} /> Inbox {inquiries.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '50%', fontSize: '0.7rem' }}>{inquiries.length}</span>}
           </button>
+          <button className={`btn ${activeTab === 'enrollments' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('enrollments')}>
+            <BookOpen size={18} /> Enrollments
+          </button>
         </div>
       </div>
 
@@ -590,6 +597,18 @@ export default function AdminDashboard() {
           </div>
 
           {/* INQUIRIES STAT */}
+          </div>
+          
+          <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }} onClick={() => setActiveTab('enrollments')}>
+            <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--primary)' }}>
+              <BookOpen size={28} />
+            </div>
+            <div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Total Enrollments</p>
+              <h3 style={{ fontSize: '2rem' }}>{users.reduce((acc, u) => acc + (u.courseAccess?.length || 0), 0)}</h3>
+            </div>
+          </div>
+
           <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }} onClick={() => setActiveTab('inbox')}>
             <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--secondary)' }}>
               <MessageSquare size={28} />
@@ -665,6 +684,142 @@ export default function AdminDashboard() {
           )}
         </div>
       )}
+
+      {/* ENROLLMENTS TAB */}
+      {activeTab === 'enrollments' && (() => {
+        // Aggregate all enrollments from all users
+        const allEnrollments = users.reduce((acc, user) => {
+          const access = user.courseAccess || [];
+          const enrollments = access.map(a => ({
+            ...a,
+            studentName: user.name,
+            studentEmail: user.email,
+            userId: user._id || user.id,
+            enrolledAt: a.createdAt || user.createdAt // Fallback to user creation if no specific date
+          }));
+          return [...acc, ...enrollments];
+        }, []);
+
+        const now = new Date();
+        const filtered = allEnrollments.filter(e => {
+          const course = courses.find(c => c.id === e.courseId);
+          const courseName = course?.title || e.courseId;
+          const matchesSearch = 
+            e.studentName?.toLowerCase().includes(enrollmentSearch.toLowerCase()) ||
+            e.studentEmail?.toLowerCase().includes(enrollmentSearch.toLowerCase()) ||
+            courseName?.toLowerCase().includes(enrollmentSearch.toLowerCase());
+          
+          const isExpired = e.expiresAt && new Date(e.expiresAt) <= now;
+          const matchesType = enrollmentType === 'active' ? !isExpired : isExpired;
+
+          return matchesSearch && matchesType;
+        }).sort((a, b) => new Date(b.enrolledAt) - new Date(a.enrolledAt));
+
+        return (
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Course Enrollments</h2>
+                <p style={{ color: 'var(--text-secondary)' }}>Track which students are learning which courses.</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', display: 'flex', gap: '4px' }}>
+                  <button 
+                    onClick={() => setEnrollmentType('active')}
+                    style={{ 
+                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                      background: enrollmentType === 'active' ? 'var(--primary)' : 'transparent',
+                      color: enrollmentType === 'active' ? 'white' : 'var(--text-secondary)'
+                    }}
+                  >
+                    Active ({allEnrollments.filter(e => !e.expiresAt || new Date(e.expiresAt) > now).length})
+                  </button>
+                  <button 
+                    onClick={() => setEnrollmentType('expired')}
+                    style={{ 
+                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                      background: enrollmentType === 'expired' ? 'var(--danger)' : 'transparent',
+                      color: enrollmentType === 'expired' ? 'white' : 'var(--text-secondary)'
+                    }}
+                  >
+                    Expired ({allEnrollments.filter(e => e.expiresAt && new Date(e.expiresAt) <= now).length})
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <input 
+                type="text" 
+                placeholder="Search by student name, email or course..." 
+                className="input-field"
+                value={enrollmentSearch}
+                onChange={e => setEnrollmentSearch(e.target.value)}
+                style={{ width: '100%', maxWidth: '500px' }}
+              />
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  <tr>
+                    <th style={{ padding: '16px' }}>Student</th>
+                    <th style={{ padding: '16px' }}>Course</th>
+                    <th style={{ padding: '16px' }}>Enrolled On</th>
+                    <th style={{ padding: '16px' }}>Expiry</th>
+                    <th style={{ padding: '16px', textAlign: 'right' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        No {enrollmentType} enrollments found matching your search.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((enr, idx) => {
+                      const course = courses.find(c => c.id === enr.courseId);
+                      const isExpiringSoon = enr.expiresAt && (new Date(enr.expiresAt) - now) / (1000 * 60 * 60 * 24) < 7;
+                      return (
+                        <tr key={`${enr.userId}-${enr.courseId}-${idx}`} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ fontWeight: 600 }}>{enr.studentName}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{enr.studentEmail}</div>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course?.title || enr.courseId}</span>
+                          </td>
+                          <td style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                            {new Date(enr.enrolledAt).toLocaleDateString()}
+                          </td>
+                          <td style={{ padding: '16px', fontSize: '0.9rem', color: isExpiringSoon ? 'var(--warning)' : 'var(--text-secondary)' }}>
+                            {enr.expiresAt ? new Date(enr.expiresAt).toLocaleDateString() : '♾️ Lifetime'}
+                          </td>
+                          <td style={{ padding: '16px', textAlign: 'right' }}>
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              padding: '4px 10px', 
+                              borderRadius: '100px', 
+                              fontWeight: 700,
+                              background: enrollmentType === 'active' ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                              color: enrollmentType === 'active' ? 'var(--success)' : 'var(--danger)',
+                              border: enrollmentType === 'active' ? '1px solid var(--success)' : '1px solid var(--danger)'
+                            }}>
+                              {enrollmentType.toUpperCase()}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* USERS TAB */}
       {activeTab === 'users' && (
