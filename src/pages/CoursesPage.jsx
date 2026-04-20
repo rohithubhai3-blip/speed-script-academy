@@ -275,21 +275,6 @@ export default function CoursesPage() {
         .lesson-link:hover .play-btn {
           transform: scale(1.15);
         }
-        .view-details-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.4);
-          backdrop-filter: blur(4px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          opacity: 0;
-          transition: all 0.3s ease;
-          cursor: pointer;
-        }
-        .thumbnail-wrap:hover .view-details-overlay {
-          opacity: 1;
-        }
       `}</style>
 
       {/* PAGE HEADER */}
@@ -336,14 +321,6 @@ export default function CoursesPage() {
                     <BookOpen size={64} color="rgba(255,255,255,0.25)" />
                   </div>
                 )}
-                <div className="view-details-overlay" onClick={() => handleViewFullImage(course, fallbackBg)}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', color: 'white' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.3)' }}>
-                      <Eye size={24} />
-                    </div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 700, textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>View Full Cover</span>
-                  </div>
-                </div>
                 <div className="thumbnail-overlay" />
 
                 {/* Status pill on thumbnail */}
