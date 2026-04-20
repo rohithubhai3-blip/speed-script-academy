@@ -75,4 +75,55 @@ router.get('/all', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   GET /api/results/leaderboard
+router.get('/leaderboard', async (req, res) => {
+  const { filter } = req.query; // 'daily' | 'weekly' | 'all-time'
+  
+  let dateFilter = {};
+  if (filter === 'daily') {
+    const startOfDay = new Date();
+    startOfDay.setHours(0,0,0,0);
+    dateFilter = { timestamp: { $gte: startOfDay } };
+  } else if (filter === 'weekly') {
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - 7);
+    startOfWeek.setHours(0,0,0,0);
+    dateFilter = { timestamp: { $gte: startOfWeek } };
+  }
+
+  try {
+    const adminUsers = await import('../models/User.js').then(m => m.default.find({ role: 'admin' }).select('_id'));
+    const adminIds = adminUsers.map(u => u._id.toString());
+
+    // Group by user, getting their absolute best attempt within the timezone
+    // Best = Highest Accuracy -> Highest WPM -> Lowest Errors
+    const topAttempts = await Attempt.aggregate([
+      { $match: { 
+          ...dateFilter,
+          wpm: { $gt: 0 }, 
+          accuracy: { $gt: 0 } 
+      } },
+      { $addFields: { userIdStr: { $toString: "$userId" } } },
+      { $match: { userIdStr: { $nin: adminIds } } },
+      { $sort: { accuracy: -1, wpm: -1, fullMistakes: 1 } },
+      { $group: {
+          _id: "$userIdStr",
+          userName: { $first: "$userName" },
+          bestAccuracy: { $first: "$accuracy" },
+          bestWpm: { $first: "$wpm" },
+          bestMistakes: { $first: "$fullMistakes" },
+          timestamp: { $first: "$timestamp" },
+          lessonTitle: { $first: "$lessonTitle" }
+      }},
+      { $sort: { bestAccuracy: -1, bestWpm: -1, bestMistakes: 1 } },
+      { $limit: 100 }
+    ]);
+
+    res.json(topAttempts);
+  } catch (error) {
+    console.error('[LEADERBOARD_ERROR]', error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

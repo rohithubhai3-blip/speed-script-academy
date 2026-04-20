@@ -215,4 +215,23 @@ router.post('/impersonate/:id', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   PUT /api/auth/change-password
+router.put('/change-password', protect, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) return res.status(400).json({ message: 'Incorrect old password' });
+
+    user.password = newPassword; // Will be hashed by pre-save hook
+    await user.save();
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

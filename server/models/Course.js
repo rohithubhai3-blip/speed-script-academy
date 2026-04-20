@@ -31,6 +31,13 @@ const courseSchema = new mongoose.Schema({
   thumbnail: { type: String },      // legacy field
   thumbnailUrl: { type: String },   // new field used by admin panel
   price: { type: Number, default: 0 },
+  status: { type: String, enum: ['Upcoming', 'Active'], default: 'Active' },
+  enrollments: [{
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    name: { type: String },
+    email: { type: String },
+    enrolledAt: { type: Date, default: Date.now }
+  }],
   levels: [levelSchema],
   createdAt: { type: Date, default: Date.now }
 });

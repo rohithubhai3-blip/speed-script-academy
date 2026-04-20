@@ -126,4 +126,75 @@ router.put('/lesson/:courseId/:levelId/:lessonId', protect, adminOnly, async (re
   }
 });
 
+// @route   DELETE /api/courses/lesson/:courseId/:levelId/:lessonId (Admin Only)
+router.delete('/lesson/:courseId/:levelId/:lessonId', protect, adminOnly, async (req, res) => {
+  const { courseId, levelId, lessonId } = req.params;
+  try {
+    const course = await CourseModel.findOne({ id: courseId });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    const level = course.levels.find(l => l.id === levelId);
+    if (!level) return res.status(404).json({ message: 'Level not found' });
+
+    const lessonIndex = level.lessons.findIndex(ls => ls.id === lessonId);
+    if (lessonIndex === -1) return res.status(404).json({ message: 'Lesson not found' });
+
+    level.lessons.splice(lessonIndex, 1);
+    await course.save();
+    res.json(course);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   POST /api/courses/:id/enroll (User)
+router.post('/:id/enroll', protect, async (req, res) => {
+  try {
+    const course = await CourseModel.findOne({ id: req.params.id });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    const isEnrolled = course.enrollments?.some(e => e.userId.toString() === req.user._id.toString());
+    if (isEnrolled) return res.status(400).json({ message: 'Already enrolled' });
+
+    course.enrollments = course.enrollments || [];
+    course.enrollments.push({
+      userId: req.user._id,
+      name: req.user.name,
+      email: req.user.email
+    });
+    
+    await course.save();
+    res.json({ message: 'Enrolled successfully', course });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   PUT /api/courses/:id/launch (Admin Only)
+router.put('/:id/launch', protect, adminOnly, async (req, res) => {
+  const { isFree, price } = req.body;
+  try {
+    const course = await CourseModel.findOne({ id: req.params.id });
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    course.status = 'Active';
+    course.price = isFree ? 0 : price;
+    await course.save();
+
+    if (isFree) {
+      import('../models/User.js').then(async ({ default: User }) => {
+        const enrolledUserIds = course.enrollments.map(e => e.userId);
+        await User.updateMany(
+          { _id: { $in: enrolledUserIds } },
+          { $addToSet: { purchasedCourses: course.id, courseAccess: { courseId: course.id, expiresAt: null } } }
+        );
+      });
+    }
+
+    res.json({ message: 'Course launched successfully', course });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

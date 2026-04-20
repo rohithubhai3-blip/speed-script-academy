@@ -10,6 +10,9 @@ export default function DashboardPage() {
   const [attempts, setAttempts] = useState([]);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -35,6 +38,22 @@ export default function DashboardPage() {
   const avgWPM = total > 0 ? (attempts.reduce((acc, a) => acc + a.wpm, 0) / total).toFixed(0) : 0;
   const avgAcc = total > 0 ? (attempts.reduce((acc, a) => acc + parseFloat(a.accuracy), 0) / total).toFixed(1) : 0;
   const bestAcc = total > 0 ? Math.max(...attempts.map(a => parseFloat(a.accuracy))) : 0;
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (newPassword.length < 6) return alert("New password must be at least 6 characters.");
+    try {
+      setIsChangingPassword(true);
+      await db.changePassword(oldPassword, newPassword);
+      alert("Password changed successfully!");
+      setOldPassword('');
+      setNewPassword('');
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to change password.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const chartData = attempts.map((a, i) => ({
     name: `Test ${total - i}`, // Since they are sorted descending by timestamp
@@ -231,6 +250,23 @@ export default function DashboardPage() {
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Complete a test to see your results here.</p>
           </div>
         )}
+      </div>
+
+      <div className="glass-card" style={{ padding: '32px', marginTop: '32px' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Security</h2>
+        <form onSubmit={handleChangePassword} style={{ maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Current Password</label>
+            <input type="password" required className="input-field" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="••••••••" style={{ width: '100%' }} />
+          </div>
+          <div>
+            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>New Password</label>
+            <input type="password" required minLength="6" className="input-field" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password (min 6 chars)" style={{ width: '100%' }} />
+          </div>
+          <button type="submit" className="btn btn-primary" disabled={isChangingPassword} style={{ marginTop: '8px' }}>
+            {isChangingPassword ? 'Updating...' : 'Change Password'}
+          </button>
+        </form>
       </div>
     </div>
   );

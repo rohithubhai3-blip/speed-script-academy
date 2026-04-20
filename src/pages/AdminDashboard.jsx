@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
   
   const [editingCourseId, setEditingCourseId] = useState(null);
-  const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0, thumbnailUrl: '' });
+  const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '' });
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   // User Management State
@@ -201,6 +201,38 @@ export default function AdminDashboard() {
 
 
 
+  const handleDeleteLesson = async (courseId, levelId, lessonId) => {
+    if (!window.confirm("Are you sure you want to permanently delete this lesson? This cannot be undone.")) return;
+    try {
+      await db.deleteLesson(courseId, levelId, lessonId);
+      alert("Lesson deleted successfully!");
+      loadData();
+    } catch (err) {
+      alert("Failed to delete lesson: " + err.message);
+    }
+  };
+
+  const handleLaunchCourse = async (course) => {
+    const isFree = window.confirm(`Launch "${course.title}" for FREE? (Click OK for Free, Cancel to set a Price)`);
+    let price = 0;
+    if (!isFree) {
+      const p = window.prompt(`Enter price for "${course.title}":`, "499");
+      if (p === null) return; // cancelled
+      price = parseInt(p, 10);
+      if (isNaN(price) || price < 0) return alert("Invalid price");
+    }
+
+    if (!window.confirm(`Are you sure you want to launch it as ${isFree ? 'FREE' : '₹'+price}? All enrolled users will ${isFree ? 'get immediate access' : 'be notified to pay'}.`)) return;
+
+    try {
+      await db.launchCourse(course.id, isFree, price);
+      alert(`Course launched successfully as ${isFree ? 'FREE' : '₹'+price}!`);
+      loadData();
+    } catch (err) {
+      alert("Launch failed: " + err.message);
+    }
+  };
+
   const handleSaveCourse = async (e) => {
     e.preventDefault();
 
@@ -222,7 +254,7 @@ export default function AdminDashboard() {
         alert("Course created successfully!");
       }
       setEditingCourseId(null);
-      setNewCourse({ title: '', description: '', price: 0, thumbnailUrl: '' });
+      setNewCourse({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '' });
       loadData();
     } catch (err) { alert(err.message); }
   };
@@ -694,6 +726,13 @@ export default function AdminDashboard() {
                 <label className="input-label">Price (Set 0 for Free)</label>
                 <input type="number" required min="0" className="input-field" value={newCourse.price} onChange={e => setNewCourse({...newCourse, price: parseInt(e.target.value)})} />
               </div>
+              <div className="input-group">
+                <label className="input-label">Status</label>
+                <select className="input-field" value={newCourse.status || 'Upcoming'} onChange={e => setNewCourse({...newCourse, status: e.target.value})}>
+                  <option value="Upcoming">Upcoming (Pre-Registration)</option>
+                  <option value="Active">Active (Launched)</option>
+                </select>
+              </div>
 
               {/* THUMBNAIL UPLOAD */}
               <div className="input-group">
@@ -731,11 +770,19 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       {c.thumbnailUrl && <img src={c.thumbnailUrl} alt="thumb" style={{ width: '44px', height: '36px', objectFit: 'cover', borderRadius: '6px', border: '1px solid var(--border-color)' }} />}
-                      <h3 style={{ color: 'var(--primary)' }}>{c.title}</h3>
+                      <div>
+                        <h3 style={{ color: 'var(--primary)', margin: 0 }}>{c.title}</h3>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Status: {c.status || 'Active'} | Enrollments: {c.enrollments?.length || 0}
+                        </div>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px' }}>
+                      {c.status === 'Upcoming' && (
+                        <button onClick={() => handleLaunchCourse(c)} className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '0.75rem' }} title="Launch Course">Launch</button>
+                      )}
                       <button onClick={() => startEditCourse(c)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Edit Course Info"><Edit3 size={18} /></button>
-                      <button onClick={() => handleDeleteCourse(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete Course"><Users size={18} style={{ color: 'var(--danger)' }} /> </button>
+                      <button onClick={() => handleDeleteCourse(c.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete Course"><Trash2 size={18} /> </button>
                     </div>
                   </div>
                   
@@ -746,13 +793,14 @@ export default function AdminDashboard() {
                         {l.lessons.length === 0 && <span style={{ marginLeft: '8px' }}>(Empty)</span>}
                         <ul style={{ paddingLeft: '20px', marginTop: '4px', listStyleType: 'disc' }}>
                           {l.lessons.map(ls => (
-                            <li key={ls.id} style={{ marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span>{ls.title} ({ls.timeMinutes}m)</span>
-                              <div style={{ display: 'flex', gap: '8px' }}>
-                                <button onClick={() => navigate(`/test/${c.id}/${l.id}/${ls.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer' }} title="Preview Test"><Eye size={14} /></button>
-                                <button onClick={() => startEditLesson(c.id, l.id, ls)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer' }} title="Edit Test Config"><Edit3 size={14} /></button>
-                              </div>
-                            </li>
+                              <li key={ls.id} style={{ marginBottom: '4px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span>{ls.title} ({ls.timeMinutes}m)</span>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                  <button onClick={() => navigate(`/test/${c.id}/${l.id}/${ls.id}`)} style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer' }} title="Preview Test"><Eye size={14} /></button>
+                                  <button onClick={() => startEditLesson(c.id, l.id, ls)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer' }} title="Edit Test Config"><Edit3 size={14} /></button>
+                                  <button onClick={() => handleDeleteLesson(c.id, l.id, ls.id)} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Delete Lesson"><Trash2 size={14} /></button>
+                                </div>
+                              </li>
                           ))}
                         </ul>
                       </div>

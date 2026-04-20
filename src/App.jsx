@@ -11,6 +11,7 @@ import CoursesPage from './pages/CoursesPage';
 import AdminDashboard from './pages/AdminDashboard';
 import TestPage from './pages/TestPage';
 import CheckoutPage from './pages/CheckoutPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import InfoPage from './pages/InfoPage';
 import ContactPage from './pages/ContactPage';
 import Footer from './components/Footer';
@@ -75,6 +76,10 @@ function App() {
                   <ProtectedRoute>
                     <CoursesPage />
                   </ProtectedRoute>
+                } />
+
+                <Route path="/leaderboard" element={
+                  <LeaderboardPage />
                 } />
 
                 <Route path="/checkout/:courseId" element={

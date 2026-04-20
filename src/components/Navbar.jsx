@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LogOut, LayoutDashboard, FileText, Sun, Moon,
-  BookOpen, Menu, X, User, Zap
+  BookOpen, Menu, X, User, Zap, Trophy
 } from 'lucide-react';
 import useStore from '../store/useStore';
 
@@ -184,6 +184,7 @@ export default function Navbar() {
 
           {/* DESKTOP LINKS */}
           <div className="desktop-nav-links">
+            <Link to="/leaderboard" className={`nav-link ${isActive('/leaderboard') ? 'active' : ''}`}>Leaderboard</Link>
             <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`}>About</Link>
             <Link to="/contact" className={`nav-link ${isActive('/contact') ? 'active' : ''}`}>Contact</Link>
 
@@ -261,6 +262,9 @@ export default function Navbar() {
             </>
           )}
 
+          <Link to="/leaderboard" className={`mobile-nav-link ${isActive('/leaderboard') ? 'active' : ''}`} onClick={closeMenu}>
+            <Trophy size={18} /> Leaderboard
+          </Link>
           <Link to="/about" className={`mobile-nav-link ${isActive('/about') ? 'active' : ''}`} onClick={closeMenu}>
             <User size={18} /> About
           </Link>

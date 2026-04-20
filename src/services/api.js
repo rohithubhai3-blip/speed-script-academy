@@ -136,10 +136,27 @@ export const db = {
     return res.data;
   },
 
+  async enrollCourse(courseId) {
+    clearCache('courses');
+    const res = await api.post(`/courses/${courseId}/enroll`, {}, { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async launchCourse(courseId, isFree, price) {
+    clearCache('courses');
+    const res = await api.put(`/courses/${courseId}/launch`, { isFree, price }, { headers: getAuthHeader() });
+    return res.data;
+  },
+
   // --- RESULTS ---
   async saveAttempt(userId, attemptData) {
     clearCache('results');
     const res = await api.post('/results/submit', attemptData, { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async getLeaderboard(filter = 'weekly') {
+    const res = await api.get(`/results/leaderboard?filter=${filter}`);
     return res.data;
   },
 
@@ -252,6 +269,11 @@ export const db = {
     return res.data;
   },
 
+  async changePassword(oldPassword, newPassword) {
+    const res = await api.put(`/auth/change-password`, { oldPassword, newPassword }, { headers: getAuthHeader() });
+    return res.data;
+  },
+
   async getPromos() {
     return [];
   },
@@ -271,6 +293,13 @@ export const db = {
     clearCache('courses');
     clearCache(`lesson:${courseId}`);
     const res = await api.put(`/courses/lesson/${courseId}/${levelId}/${lessonId}`, lessonData, { headers: getAuthHeader() });
+    return res.data;
+  },
+
+  async deleteLesson(courseId, levelId, lessonId) {
+    clearCache('courses');
+    clearCache(`lesson:${courseId}`);
+    const res = await api.delete(`/courses/lesson/${courseId}/${levelId}/${lessonId}`, { headers: getAuthHeader() });
     return res.data;
   },
 

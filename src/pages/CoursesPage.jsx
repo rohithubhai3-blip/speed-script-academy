@@ -50,6 +50,22 @@ export default function CoursesPage() {
   }, []);
 
   // ── SKELETON ──────────────────────────────────────────────
+  const handleEnroll = async (courseId) => {
+    if (!user) {
+      alert("Please login to enroll.");
+      navigate('/login');
+      return;
+    }
+    try {
+      const res = await db.enrollCourse(courseId);
+      // Update local state to reflect enrollment
+      setCourses(courses.map(c => c.id === courseId ? res.course : c));
+      alert("Successfully Pre-Registered! You will be notified when the course launches.");
+    } catch (err) {
+      alert("Failed to enroll: " + (err.response?.data?.message || err.message));
+    }
+  };
+
   if (loading) return (
     <div>
       <style>{`@keyframes shimmer{0%,100%{opacity:1}50%{opacity:0.45}}`}</style>
@@ -158,10 +174,15 @@ export default function CoursesPage() {
       {/* COURSE CARDS GRID */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '28px' }}>
         {courses.map((course, courseIdx) => {
-          const isOwned = !course.price || course.price === 0
-            || user?.role === 'admin'
-            || user?.purchasedCourses?.includes(course.id)
-            || user?.courseAccess?.some(a => a.courseId === course.id);
+          const isAdmin = user?.role === 'admin';
+          const isOwned = isAdmin || (
+            course.status !== 'Upcoming' && (
+              !course.price || course.price === 0
+              || user?.purchasedCourses?.includes(course.id)
+              || user?.courseAccess?.some(a => a.courseId === course.id)
+            )
+          );
+          const isEnrolled = course.enrollments?.some(e => String(e.userId) === String(user?._id || user?.id));
           const isPending = pendingRequests.find(
             r => (r.userId?._id || r.userId) === (user?._id || user?.id) && r.courseId === course.id
           );
@@ -191,7 +212,11 @@ export default function CoursesPage() {
                 {/* Status pill on thumbnail */}
                 <div style={{ position: 'absolute', top: '14px', right: '14px' }}>
                   {!isOwned ? (
-                    isPending ? (
+                    course.status === 'Upcoming' ? (
+                      <span style={{ background: 'rgba(139,92,246,0.9)', color: '#fff', padding: '5px 12px', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px', backdropFilter: 'blur(8px)' }}>
+                        ✨ Upcoming
+                      </span>
+                    ) : isPending ? (
                       <span style={{ background: 'rgba(245,158,11,0.9)', color: '#fff', padding: '5px 12px', borderRadius: '100px', fontSize: '0.72rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px', backdropFilter: 'blur(8px)' }}>
                         <Clock size={12} /> Pending
                       </span>
@@ -237,23 +262,43 @@ export default function CoursesPage() {
                 {/* ── ACTION ── */}
                 {!isOwned ? (
                   // LOCKED STATE
-                  <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
-                    {isPending ? (
-                      <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '12px', padding: '14px 16px', textAlign: 'center' }}>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--warning)', fontWeight: 600, margin: 0 }}>
-                          ⏳ Verification in progress — 2–4 hrs
-                        </p>
-                      </div>
-                    ) : (
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => navigate(`/checkout/${course.id}`)}
-                        style={{ width: '100%', padding: '12px', fontSize: '0.95rem', borderRadius: '12px', justifyContent: 'center' }}
-                      >
-                        <CreditCard size={16} /> Unlock for ₹{course.price}
-                      </button>
-                    )}
-                  </div>
+                  course.status === 'Upcoming' ? (
+                    <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
+                      {isEnrolled ? (
+                        <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '14px 16px', textAlign: 'center' }}>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--success)', fontWeight: 600, margin: 0 }}>
+                            <CheckCircle size={14} style={{display:'inline', verticalAlign:'middle'}}/> Enrolled! You'll be notified when launched.
+                          </p>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => handleEnroll(course.id)}
+                          style={{ width: '100%', padding: '12px', fontSize: '0.95rem', borderRadius: '12px', justifyContent: 'center' }}
+                        >
+                          <CheckCircle size={16} /> Pre-Register / Enroll Now
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
+                      {isPending ? (
+                        <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '12px', padding: '14px 16px', textAlign: 'center' }}>
+                          <p style={{ fontSize: '0.82rem', color: 'var(--warning)', fontWeight: 600, margin: 0 }}>
+                            ⏳ Verification in progress — 2–4 hrs
+                          </p>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => navigate(`/checkout/${course.id}`)}
+                          style={{ width: '100%', padding: '12px', fontSize: '0.95rem', borderRadius: '12px', justifyContent: 'center' }}
+                        >
+                          <CreditCard size={16} /> Unlock for ₹{course.price}
+                        </button>
+                      )}
+                    </div>
+                  )
                 ) : (
                   // OWNED — EXPANDABLE LESSONS
                   <div style={{ marginTop: 'auto', paddingTop: '8px' }}>
