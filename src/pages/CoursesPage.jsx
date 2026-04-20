@@ -259,8 +259,8 @@ export default function CoursesPage() {
                   ))}
                 </div>
 
-                {/* 📊 Course Analytics Badge (Only show if at least 1 test conducted) */}
-                {course.stats?.attemptsCount > 0 && (
+                {/* 📊 Course Analytics Badge (ADMIN ONLY) */}
+                {isAdmin && course.stats?.attemptsCount > 0 && (
                   <div style={{ 
                     marginTop: '6px', 
                     padding: '10px 14px', 
