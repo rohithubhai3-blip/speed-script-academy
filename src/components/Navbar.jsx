@@ -283,6 +283,15 @@ export default function Navbar() {
 
           {user ? (
             <>
+              {/* User Identity Header */}
+              <div style={{ padding: '16px 14px', background: 'rgba(14,165,233,0.04)', borderRadius: '12px', marginBottom: '8px' }}>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {user.name} 
+                  {user.role === 'admin' && <span style={{ fontSize: '0.6rem', background: 'var(--warning)', color: '#fff', padding: '1px 5px', borderRadius: '4px' }}>ADMIN</span>}
+                </div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '2px' }}>{user.email}</div>
+              </div>
+
               <Link to={user.role === 'admin' ? '/admin' : '/dashboard'}
                 className={`mobile-nav-link ${(isActive('/dashboard') || isActive('/admin')) ? 'active' : ''}`}
                 onClick={closeMenu}>

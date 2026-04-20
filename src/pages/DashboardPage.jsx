@@ -69,6 +69,11 @@ export default function DashboardPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '32px' }}>
         <div>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Welcome back, {user.name}!</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            <span style={{ background: 'rgba(148,163,184,0.1)', padding: '4px 10px', borderRadius: '100px', border: '1px solid var(--border-color)' }}>
+              📧 {user.email || 'Email not available'}
+            </span>
+          </div>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Here's an overview of your stenography progress.</p>
           
           {/* Dynamic Dashboard 3D Socials */}
