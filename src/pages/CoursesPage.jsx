@@ -259,33 +259,29 @@ export default function CoursesPage() {
                   ))}
                 </div>
 
-                {/* 📊 Course Analytics Badge */}
-                <div style={{ 
-                  marginTop: '6px', 
-                  padding: '10px 14px', 
-                  background: 'rgba(14,165,233,0.04)', 
-                  borderRadius: '12px', 
-                  border: '1px dashed rgba(14,165,233,0.2)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)' }}>
-                    <Activity size={14} /> 
-                    <span>Tests Conducted: {(course.stats?.attemptsCount || 0).toLocaleString()} times</span>
-                  </div>
-                  {course.stats?.attemptsCount > 0 ? (
+                {/* 📊 Course Analytics Badge (Only show if at least 1 test conducted) */}
+                {course.stats?.attemptsCount > 0 && (
+                  <div style={{ 
+                    marginTop: '6px', 
+                    padding: '10px 14px', 
+                    background: 'rgba(14,165,233,0.04)', 
+                    borderRadius: '12px', 
+                    border: '1px dashed rgba(14,165,233,0.2)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)' }}>
+                      <Activity size={14} /> 
+                      <span>Tests Conducted: {(course.stats?.attemptsCount || 0).toLocaleString()} times</span>
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '22px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> {course.stats?.uniqueStudentsCount || 0} Students Attempted</span>
                       <span>🎯 Avg. Acc: {Math.round((course.stats.totalAccuracy / course.stats.attemptsCount) || 0)}%</span>
                       <span>⚡ Avg. WPM: {Math.round((course.stats.totalWPM / course.stats.attemptsCount) || 0)}</span>
                     </div>
-                  ) : (
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '22px', fontStyle: 'italic', opacity: 0.8 }}>
-                      ✨ Be the first to attempt this course!
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* ── ACTION ── */}
                 {!isOwned ? (
