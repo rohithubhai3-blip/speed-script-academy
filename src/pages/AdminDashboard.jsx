@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 
@@ -542,7 +542,7 @@ export default function AdminDashboard() {
         <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Admin Dashboard</h1>
         
         {/* TABS */}
-        <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
           <button className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('overview')}>
             <List size={18} /> Overview
           </button>
@@ -594,9 +594,6 @@ export default function AdminDashboard() {
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Total Attempts</p>
               <h3 style={{ fontSize: '2rem' }}>{attempts.length}</h3>
             </div>
-          </div>
-
-          {/* INQUIRIES STAT */}
           </div>
           
           <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }} onClick={() => setActiveTab('enrollments')}>
