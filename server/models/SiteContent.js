@@ -66,6 +66,14 @@ const siteContentSchema = new mongoose.Schema({
     enabled: { type: Boolean, default: true },
     text: { type: String, default: '🎁 FREE COURSES AVAILABLE' }
   },
+  inbox: [{
+    name: String,
+    email: String,
+    message: String,
+    id: String,
+    timestamp: Date,
+    read: { type: Boolean, default: false }
+  }],
   updatedAt: { type: Date, default: Date.now }
 });
 

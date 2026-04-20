@@ -327,6 +327,8 @@ export const db = {
   },
 
   async getInquiries() {
+    // Clear CMS cache to ensure admin sees latest messages
+    clearCache('cms');
     const current = await this.getSiteContent();
     return current.inbox || [];
   },
