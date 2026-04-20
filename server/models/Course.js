@@ -39,6 +39,13 @@ const courseSchema = new mongoose.Schema({
     enrolledAt: { type: Date, default: Date.now }
   }],
   levels: [levelSchema],
+  stats: {
+    attemptsCount: { type: Number, default: 0 },
+    uniqueStudentsCount: { type: Number, default: 0 },
+    totalWPM: { type: Number, default: 0 },
+    totalAccuracy: { type: Number, default: 0 },
+    lastAttemptedAt: { type: Date }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

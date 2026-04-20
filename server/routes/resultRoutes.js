@@ -41,6 +41,32 @@ router.post('/submit', protect, async (req, res) => {
       rules:            rules || {},
       timestamp:        timestamp ? new Date(timestamp) : new Date(),
     });
+    
+    // 🔥 Update Course Analytics
+    import('../models/Course.js').then(async ({ default: Course }) => {
+      if (courseId) {
+        try {
+          const statsUpdate = {
+             $inc: {
+                "stats.attemptsCount": 1,
+                "stats.totalWPM": Number(wpm) || 0,
+                "stats.totalAccuracy": Number(accuracy) || 0
+             },
+             $set: { "stats.lastAttemptedAt": new Date() }
+          };
+
+          // Check if this is the first attempt for this user on this course to update unique student count
+          const existingAttempt = await Attempt.findOne({ userId: req.user._id, courseId, _id: { $ne: attempt._id } });
+          if (!existingAttempt) {
+             statsUpdate.$inc["stats.uniqueStudentsCount"] = 1;
+          }
+
+          await Course.findOneAndUpdate({ id: courseId }, statsUpdate);
+        } catch (err) {
+          console.error('[STATS_UPDATE_ERROR]', err.message);
+        }
+      }
+    });
 
     res.status(201).json({ success: true, attemptId: attempt._id });
   } catch (error) {

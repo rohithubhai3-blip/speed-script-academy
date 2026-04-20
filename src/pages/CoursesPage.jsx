@@ -253,10 +253,36 @@ export default function CoursesPage() {
                 {/* Level pills */}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
                   {course.levels?.map(lv => (
-                    <span key={lv.id} style={{ fontSize: '0.68rem', padding: '3px 9px', borderRadius: '100px', background: 'rgba(14,165,233,0.08)', color: 'var(--primary)', border: '1px solid rgba(14,165,233,0.2)', fontWeight: 600 }}>
+                    <span key={lv.id} style={{ fontSize: '0.68rem', padding: '3px 9px', borderRadius: '100px', background: 'rgba(148,163,184,0.06)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)', fontWeight: 600 }}>
                       {lv.title} · {lv.lessons?.length || 0}
                     </span>
                   ))}
+                </div>
+
+                {/* 📊 Course Analytics Badge */}
+                <div style={{ 
+                  marginTop: '6px', 
+                  padding: '10px 14px', 
+                  background: 'rgba(14,165,233,0.04)', 
+                  borderRadius: '12px', 
+                  border: '1px dashed rgba(14,165,233,0.2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)' }}>
+                    <Activity size={14} /> 
+                    <span>Tests Conducted: {(course.stats?.attemptsCount || 0).toLocaleString()} times</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '22px' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Users size={12} /> {course.stats?.uniqueStudentsCount || 0} Students Attempted</span>
+                    {course.stats?.attemptsCount > 0 && (
+                      <>
+                        <span>🎯 Avg. Acc: {Math.round((course.stats.totalAccuracy / course.stats.attemptsCount) || 0)}%</span>
+                        <span>⚡ Avg. WPM: {Math.round((course.stats.totalWPM / course.stats.attemptsCount) || 0)}</span>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 {/* ── ACTION ── */}

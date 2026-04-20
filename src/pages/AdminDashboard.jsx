@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
   
   const [editingCourseId, setEditingCourseId] = useState(null);
-  const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '' });
+  const [newCourse, setNewCourse] = useState({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '', stats: { attemptsCount: 0, uniqueStudentsCount: 0, totalWPM: 0, totalAccuracy: 0 } });
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   // User Management State
@@ -254,7 +254,7 @@ export default function AdminDashboard() {
         alert("Course created successfully!");
       }
       setEditingCourseId(null);
-      setNewCourse({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '' });
+      setNewCourse({ title: '', description: '', price: 0, status: 'Upcoming', thumbnailUrl: '', stats: { attemptsCount: 0, uniqueStudentsCount: 0, totalWPM: 0, totalAccuracy: 0 } });
       loadData();
     } catch (err) { alert(err.message); }
   };
@@ -292,7 +292,14 @@ export default function AdminDashboard() {
 
   const startEditCourse = (c) => {
     setEditingCourseId(c.id);
-    setNewCourse({ title: c.title, description: c.description || '', price: c.price || 0, thumbnailUrl: c.thumbnailUrl || '' });
+    setNewCourse({ 
+      title: c.title, 
+      description: c.description || '', 
+      price: c.price || 0, 
+      thumbnailUrl: c.thumbnailUrl || '',
+      status: c.status || 'Active',
+      stats: c.stats || { attemptsCount: 0, uniqueStudentsCount: 0, totalWPM: 0, totalAccuracy: 0 }
+    });
   };
 
   const handleGeneratePromo = async (courseId) => {
@@ -757,6 +764,36 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </div>
+              
+              {/* 📊 COURSE STATISTICS (Admin Only Edit) */}
+              <div style={{ background: 'rgba(148,163,184,0.06)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '0.9rem', marginBottom: '12px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                   <Activity size={16} /> Course Usage Stats (Manual Control)
+                </h4>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem' }}>Tests Conducted</label>
+                    <input type="number" className="input-field" value={newCourse.stats?.attemptsCount || 0} onChange={e => setNewCourse({...newCourse, stats: {...newCourse.stats, attemptsCount: parseInt(e.target.value) || 0}})} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem' }}>Unique Students</label>
+                    <input type="number" className="input-field" value={newCourse.stats?.uniqueStudentsCount || 0} onChange={e => setNewCourse({...newCourse, stats: {...newCourse.stats, uniqueStudentsCount: parseInt(e.target.value) || 0}})} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem' }}>Total WPM (Sum)</label>
+                    <input type="number" className="input-field" value={newCourse.stats?.totalWPM || 0} onChange={e => setNewCourse({...newCourse, stats: {...newCourse.stats, totalWPM: parseInt(e.target.value) || 0}})} />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem' }}>Total Acc. (Sum)</label>
+                    <input type="number" className="input-field" value={newCourse.stats?.totalAccuracy || 0} onChange={e => setNewCourse({...newCourse, stats: {...newCourse.stats, totalAccuracy: parseInt(e.target.value) || 0}})} />
+                  </div>
+                </div>
+                {newCourse.stats?.attemptsCount > 0 && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '8px', padding: '8px', background: 'var(--bg-base)', borderRadius: '6px' }}>
+                    Calculated: Avg WPM: {Math.round(newCourse.stats.totalWPM / newCourse.stats.attemptsCount)} | Avg Acc: {Math.round(newCourse.stats.totalAccuracy / newCourse.stats.attemptsCount)}%
+                  </div>
+                )}
+              </div>
 
               <button type="submit" className={editingCourseId ? "btn btn-primary" : "btn btn-outline"} style={{ width: '100%', marginTop: '16px' }}>
                 <Plus size={18}/> {editingCourseId ? 'Save Course Updates' : 'Create Course Category'}
@@ -774,6 +811,12 @@ export default function AdminDashboard() {
                         <h3 style={{ color: 'var(--primary)', margin: 0 }}>{c.title}</h3>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           Status: {c.status || 'Active'} | Enrollments: {c.enrollments?.length || 0}
+                        </div>
+                        {/* 📈 Stats line in admin list */}
+                        <div style={{ fontSize: '0.7rem', color: 'var(--success)', marginTop: '4px', fontWeight: 600 }}>
+                           Tests: {c.stats?.attemptsCount || 0} | 
+                           Avg WPM: {c.stats?.attemptsCount > 0 ? Math.round(c.stats.totalWPM / c.stats.attemptsCount) : 0} | 
+                           Avg Acc: {c.stats?.attemptsCount > 0 ? Math.round(c.stats.totalAccuracy / c.stats.attemptsCount) : 0}%
                         </div>
                       </div>
                     </div>
