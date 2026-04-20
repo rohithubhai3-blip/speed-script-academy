@@ -32,4 +32,38 @@ router.post('/', protect, adminOnly, async (req, res) => {
   }
 });
 
+// @route   POST /api/cms/inquiry (Public)
+// Allows anonymous users to send messages to the admin inbox stored in CMS
+router.post('/inquiry', async (req, res) => {
+  try {
+    const { name, email, message } = req.body;
+    if (!name || !email || !message) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const current = await SiteContentModel.findOne({ key: 'main' });
+    if (!current) {
+      return res.status(404).json({ message: "Site content config not found" });
+    }
+
+    const inbox = current.inbox || [];
+    const newInbox = [{ 
+      name, 
+      email, 
+      message, 
+      id: Date.now().toString(), 
+      timestamp: new Date().toISOString() 
+    }, ...inbox];
+
+    await SiteContentModel.findOneAndUpdate(
+      { key: 'main' },
+      { inbox: newInbox }
+    );
+
+    res.json({ success: true, message: "Inquiry received" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;
