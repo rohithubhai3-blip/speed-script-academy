@@ -454,3 +454,79 @@ body.dark ::-webkit-scrollbar-thumb { background: #1e293b; }
 .mobile-nav-item.active svg {
   transform: scale(1.15);
 }
+/* ============================================================
+   3D SOCIAL BUTTONS
+   ============================================================ */
+.social-btn-3d {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  text-decoration: none;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 4px 0 rgba(0,0,0,0.2),
+    0 10px 20px rgba(0,0,0,0.1);
+  overflow: hidden;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.social-btn-3d::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.15), transparent);
+  pointer-events: none;
+}
+
+.social-btn-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 6px 0 rgba(0,0,0,0.2),
+    0 15px 30px rgba(0,0,0,0.2);
+}
+
+.social-btn-3d:active {
+  transform: translateY(2px);
+  box-shadow: 
+    0 2px 0 rgba(0,0,0,0.2),
+    0 5px 10px rgba(0,0,0,0.1);
+}
+
+.social-btn-3d.youtube {
+  background: linear-gradient(135deg, #FF0000 0%, #CC0000 100%);
+  color: #FFFFFF !important;
+}
+
+.social-btn-3d.telegram {
+  background: linear-gradient(135deg, #0088CC 0%, #006699 100%);
+  color: #FFFFFF !important;
+}
+
+.social-btn-3d.whatsapp {
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: #FFFFFF !important;
+}
+
+.social-btn-3d svg {
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));
+}
+
+.social-btn-3d .btn-glow {
+  position: absolute;
+  top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.social-btn-3d:hover .btn-glow {
+  opacity: 1;
+}

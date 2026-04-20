@@ -71,22 +71,25 @@ export default function DashboardPage() {
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Welcome back, {user.name}!</h1>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>Here's an overview of your stenography progress.</p>
           
-          {/* Dynamic Dashboard Socials */}
+          {/* Dynamic Dashboard 3D Socials */}
           {siteContent?.socials && (siteContent.socials.youtube || siteContent.socials.telegram || siteContent.socials.whatsapp) && (
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               {siteContent.socials.youtube && (
-                <a href={siteContent.socials.youtube} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#FF0000', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <PlayCircle size={14} /> Subscribe
+                <a href={siteContent.socials.youtube} target="_blank" rel="noopener noreferrer" className="social-btn-3d youtube" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                  <PlayCircle size={16} /> <span>YouTube</span>
+                  <div className="btn-glow"></div>
                 </a>
               )}
               {siteContent.socials.telegram && (
-                <a href={siteContent.socials.telegram} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(0, 136, 204, 0.1)', color: '#0088cc', border: '1px solid rgba(0,136,204,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Send size={14} /> Telegram
+                <a href={siteContent.socials.telegram} target="_blank" rel="noopener noreferrer" className="social-btn-3d telegram" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                  <Send size={16} /> <span>Telegram</span>
+                  <div className="btn-glow"></div>
                 </a>
               )}
               {siteContent.socials.whatsapp && (
-                <a href={`https://wa.me/${siteContent.socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <MessageCircle size={14} /> Join Group
+                <a href={`https://wa.me/${siteContent.socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="social-btn-3d whatsapp" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+                  <MessageCircle size={16} /> <span>WhatsApp</span>
+                  <div className="btn-glow"></div>
                 </a>
               )}
             </div>

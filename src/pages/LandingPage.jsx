@@ -101,22 +101,25 @@ export default function LandingPage() {
             )}
           </div>
 
-          {/* Dynamic Social Links */}
+          {/* Dynamic 3D Social Buttons */}
           {(content.socials?.youtube || content.socials?.telegram || content.socials?.whatsapp) && (
-            <div className="animate-fade-in" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '40px', animationDelay: '0.5s' }}>
+            <div className="animate-fade-in" style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '48px', animationDelay: '0.5s', flexWrap: 'wrap' }}>
               {content.socials.youtube && (
-                <a href={content.socials.youtube} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(255, 0, 0, 0.1)', color: '#FF0000', border: '1px solid rgba(255,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <PlayCircle size={16} /> YouTube
+                <a href={content.socials.youtube} target="_blank" rel="noopener noreferrer" className="social-btn-3d youtube">
+                  <PlayCircle size={20} /> <span>YouTube</span>
+                  <div className="btn-glow"></div>
                 </a>
               )}
               {content.socials.telegram && (
-                <a href={content.socials.telegram} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(0, 136, 204, 0.1)', color: '#0088cc', border: '1px solid rgba(0,136,204,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Send size={16} /> Telegram
+                <a href={content.socials.telegram} target="_blank" rel="noopener noreferrer" className="social-btn-3d telegram">
+                  <Send size={20} /> <span>Telegram</span>
+                  <div className="btn-glow"></div>
                 </a>
               )}
               {content.socials.whatsapp && (
-                <a href={`https://wa.me/${content.socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="badge" style={{ background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37,211,102,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <MessageCircle size={16} /> WhatsApp
+                <a href={`https://wa.me/${content.socials.whatsapp}`} target="_blank" rel="noopener noreferrer" className="social-btn-3d whatsapp">
+                  <MessageCircle size={20} /> <span>WhatsApp</span>
+                  <div className="btn-glow"></div>
                 </a>
               )}
             </div>
