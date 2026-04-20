@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import { Link, useNavigate } from 'react-router-dom';
-import { Play, Lock, CreditCard, CheckCircle, BookOpen, Clock, ChevronDown, ChevronUp, Zap, Shield } from 'lucide-react';
+import { Play, Lock, CreditCard, CheckCircle, BookOpen, Clock, ChevronDown, ChevronUp, Zap, Shield, Activity, Users } from 'lucide-react';
 import useStore from '../store/useStore';
 
 // Default gradient thumbnails when no image is uploaded
