@@ -19,7 +19,8 @@ import useStore from './store/useStore';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
 import ModalContainer from './components/ModalContainer';
-import { warmupServer } from './services/api';
+import AnnouncementBanner from './components/AnnouncementBanner';
+import db, { warmupServer } from './services/api';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
@@ -33,6 +34,24 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
 function App() {
   const theme = useStore(state => state.theme);
+  const setAnnouncement = useStore(state => state.setAnnouncement);
+
+  useEffect(() => {
+    const fetchAnnouncement = async () => {
+      try {
+        const settings = await db.getSettings();
+        if (settings && settings.announcementMessage) {
+          setAnnouncement({
+            message: settings.announcementMessage,
+            expiresAt: settings.announcementExpiresAt
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch settings:", err);
+      }
+    };
+    fetchAnnouncement();
+  }, [setAnnouncement]);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -53,6 +72,7 @@ function App() {
       <ErrorBoundary>
         <ToastContainer />
         <ModalContainer />
+        <AnnouncementBanner />
         <div className="app-container">
           <div className="main-content">
             <Navbar />

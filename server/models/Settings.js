@@ -5,6 +5,9 @@ const settingsSchema = new mongoose.Schema({
   upiId: { type: String, default: '' },
   whatsappNumber: { type: String, default: '' },
   qrCodeUrl: { type: String, default: '' },
+  // Global Notification Fields
+  announcementMessage: { type: String, default: '' },
+  announcementExpiresAt: { type: Date, default: null },
   updatedAt: { type: Date, default: Date.now }
 });
 

@@ -1503,14 +1503,37 @@ export default function AdminDashboard() {
                   <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>Include country code without + (e.g., 91 for India)</p>
                 </div>
 
-                <div className="input-group">
-                  <label className="input-label">Payment QR Code</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '10px' }}>
-                    <input type="text" className="input-field" value={globalSettings.qrCodeUrl} readOnly placeholder="Upload QR Image below..." />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', padding: '0 16px', borderRadius: '4px', cursor: 'pointer' }}>
-                      <Upload size={14} />
-                      <input type="file" accept="image/*" onChange={handleQRUpload} style={{ display: 'none' }} />
-                    </label>
+                <div className="input-group" style={{ gridColumn: 'span 2', background: 'rgba(14, 165, 233, 0.05)', padding: '20px', borderRadius: '8px', border: '1px dashed var(--primary)' }}>
+                  <label className="input-label" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Megaphone size={16} /> Broadcast Message (Visible to users)
+                  </label>
+                  <textarea 
+                    className="input-field" 
+                    value={globalSettings.announcementMessage} 
+                    onChange={e => setGlobalSettings({...globalSettings, announcementMessage: e.target.value})} 
+                    placeholder="Type a message to show on top of every page..."
+                    style={{ minHeight: '80px', marginBottom: '12px' }}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div>
+                      <label className="input-label" style={{ fontSize: '0.8rem' }}>Display Until</label>
+                      <input 
+                        type="datetime-local" 
+                        className="input-field" 
+                        value={globalSettings.announcementExpiresAt ? new Date(new Date(globalSettings.announcementExpiresAt).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''} 
+                        onChange={e => setGlobalSettings({...globalSettings, announcementExpiresAt: e.target.value})} 
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      <button 
+                        type="button" 
+                        className="btn" 
+                        style={{ width: '100%', background: 'rgba(244, 63, 94, 0.1)', color: 'var(--danger)', border: '1px solid var(--danger)' }}
+                        onClick={() => setGlobalSettings({...globalSettings, announcementMessage: '', announcementExpiresAt: null})}
+                      >
+                        Clear Message
+                      </button>
+                    </div>
                   </div>
                 </div>
 
