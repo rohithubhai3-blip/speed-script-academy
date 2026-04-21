@@ -30,10 +30,11 @@ const AnnouncementBanner = () => {
     <div 
       className="announcement-banner"
       style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
-        zIndex: 1000,
-        width: '100%',
+        left: 0,
+        right: 0,
+        zIndex: 10000,
         padding: '12px 24px',
         background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.9), rgba(99, 102, 241, 0.9))',
         backdropFilter: 'blur(10px)',

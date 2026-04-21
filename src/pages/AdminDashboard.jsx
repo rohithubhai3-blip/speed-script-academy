@@ -19,7 +19,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [globalSettings, setGlobalSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '' });
+  const [globalSettings, setGlobalSettings] = useState({ upiId: '', whatsappNumber: '', qrCodeUrl: '', announcementMessage: '', announcementExpiresAt: null });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [siteContent, setSiteContent] = useState(null);
   const [inquiries, setInquiries] = useState([]);

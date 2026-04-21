@@ -20,7 +20,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
 import ModalContainer from './components/ModalContainer';
 import AnnouncementBanner from './components/AnnouncementBanner';
-import db, { warmupServer } from './services/api';
+import { db, warmupServer } from './services/api';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
