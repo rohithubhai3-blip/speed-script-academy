@@ -1467,9 +1467,10 @@ export default function AdminDashboard() {
                         <td style={{ padding: '16px 8px', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'monospace', fontSize: '1.1rem' }}>{p.code}</td>
                         <td style={{ padding: '16px 8px' }}>{courseName}</td>
                         <td style={{ padding: '16px 8px' }}>
-                          <span style={{ fontSize: '0.75rem', background: p.usedBy ? 'rgba(244,63,94,0.2)' : 'rgba(16,185,129,0.2)', color: p.usedBy ? 'var(--danger)' : 'var(--success)', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                            {p.usedBy ? `Used by ${users.find(u => u.id === p.usedBy)?.name || p.usedBy}` : 'Unused'}
+                          <span style={{ fontSize: '0.75rem', background: p.isUsed ? 'rgba(244,63,94,0.1)' : 'rgba(16,185,129,0.1)', color: p.isUsed ? 'var(--danger)' : 'var(--success)', padding: '4px 8px', borderRadius: '4px', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                            {p.isUsed ? `Used by ${users.find(u => (u._id || u.id).toString() === (p.usedBy?._id || p.usedBy)?.toString())?.name || 'Someone'}` : 'Unused'}
                           </span>
+                          {p.usedAt && <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>{new Date(p.usedAt).toLocaleDateString()}</div>}
                         </td>
                       </tr>
                     )

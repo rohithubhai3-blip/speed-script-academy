@@ -229,10 +229,11 @@ export const db = {
   },
 
   async redeemPromoCode(userId, promoCode) {
-    if (promoCode === 'FREE2024') {
-       return { ...JSON.parse(localStorage.getItem('ssa_user')), purchasedCourses: ['course-demo', 'course-1'] };
-    }
-    throw new Error("Invalid or Expired Promo Code");
+    const res = await api.post('/purchase/redeem', { promoCode }, { headers: getAuthHeader() });
+    // Update local storage user data with newly granted access
+    localStorage.setItem('ssa_user', JSON.stringify(res.data.user));
+    clearCache();
+    return res.data;
   },
 
   // --- ADMIN ONLY ---
@@ -275,11 +276,13 @@ export const db = {
   },
 
   async getPromos() {
-    return [];
+    const res = await api.get('/purchase/promos', { headers: getAuthHeader() });
+    return res.data;
   },
 
   async generatePromoCode(courseId) {
-    return "FREE-" + Math.random().toString(36).substring(7).toUpperCase();
+    const res = await api.post('/purchase/promos/generate', { courseId }, { headers: getAuthHeader() });
+    return res.data.code;
   },
 
   async addLesson(courseId, levelId, lessonData) {
