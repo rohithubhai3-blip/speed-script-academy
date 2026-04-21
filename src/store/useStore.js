@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import db from '../services/api';
 
 // Temporary mock user for ease of development. Later we initialize with null.
 const useStore = create((set) => ({
@@ -23,8 +22,7 @@ const useStore = create((set) => ({
     set({ user: userData });
   },
   
-  logout: async () => {
-    await db.logout();
+  logout: () => {
     localStorage.removeItem('ssa_user');
     set({ user: null });
   },

@@ -11,31 +11,6 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'secret123', { expiresIn: '30d' });
 };
 
-// Cookie Helper
-const sendTokenResponse = (user, statusCode, res) => {
-  const token = generateToken(user._id);
-
-  const cookieOptions = {
-    expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Lax for local development
-  };
-
-  res
-    .status(statusCode)
-    .cookie('ssa_token', token, cookieOptions)
-    .json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      purchasedCourses: user.purchasedCourses || [],
-      courseAccess: user.courseAccess || [],
-      lastLogin: user.lastLogin
-    });
-};
-
 // @route   POST /api/auth/register
 router.post('/register', async (req, res) => {
   const { name, email, password, secretKey } = req.body;
@@ -64,7 +39,14 @@ router.post('/register', async (req, res) => {
     });
 
     if (user) {
-      sendTokenResponse(user, 201, res);
+      res.status(201).json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        purchasedCourses: user.purchasedCourses || [],
+        token: generateToken(user._id)
+      });
     } else {
       throw new Error("User creation failed in database");
     }
@@ -87,9 +69,16 @@ router.post('/login', async (req, res) => {
       // Update last login timestamp
       user.lastLogin = new Date();
       await user.save();
-      user.lastLogin = new Date();
-      await user.save();
-      sendTokenResponse(user, 200, res);
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        purchasedCourses: user.purchasedCourses || [],
+        courseAccess: user.courseAccess || [],
+        lastLogin: user.lastLogin,
+        token: generateToken(user._id)
+      });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
     }
@@ -211,9 +200,16 @@ router.post('/impersonate/:id', protect, adminOnly, async (req, res) => {
 
     console.log(`[AUTH] Admin ${req.user.email} is impersonating ${user.email}`);
 
-    console.log(`[AUTH] Admin ${req.user.email} is impersonating ${user.email}`);
-
-    sendTokenResponse(user, 200, res);
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      purchasedCourses: user.purchasedCourses || [],
+      courseAccess: user.courseAccess || [],
+      lastLogin: user.lastLogin,
+      token: generateToken(user._id)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -236,15 +232,6 @@ router.put('/change-password', protect, async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
-
-// @route   POST /api/auth/logout
-router.post('/logout', (req, res) => {
-  res.cookie('ssa_token', 'none', {
-    expires: new Date(Date.now() + 10 * 1000), // 10 seconds
-    httpOnly: true
-  });
-  res.status(200).json({ message: 'Logged out successfully' });
 });
 
 export default router;

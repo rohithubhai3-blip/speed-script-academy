@@ -2,12 +2,23 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+// Helper to get Auth Header
+export const getAuthHeader = () => {
+  const user = JSON.parse(localStorage.getItem('ssa_user') || 'null');
+  return user?.token ? { Authorization: `Bearer ${user.token}` } : {};
+};
+
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+});
+
+// Automatically add token to all requests
+api.interceptors.request.use((config) => {
+  const headers = getAuthHeader();
+  if (headers.Authorization) {
+    config.headers.Authorization = headers.Authorization;
+  }
+  return config;
 });
 
 // ============================================================
@@ -67,11 +78,6 @@ export const db = {
   },
 
   async logout() {
-    try {
-      await api.post('/auth/logout');
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
     localStorage.removeItem('ssa_user');
     clearCache();
   },
