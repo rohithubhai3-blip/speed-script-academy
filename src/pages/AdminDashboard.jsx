@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       // Fire ALL requests in parallel — 6× faster than sequential awaits
-      const [u, a, c, p, s, r, sc] = await Promise.all([
+      const [u, a, c, p, s, r, sc, inq] = await Promise.all([
         db.getAllUsers(),
         db.getAllAttempts(),
         db.getCourses(),
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
       setGlobalSettings(s);
       setPendingRequests(r);
       setSiteContent(sc);
-      setInquiries(i);
+      setInquiries(inq);
     } catch (err) {
       console.error("Dashboard data load failed:", err);
     } finally {
@@ -685,17 +685,63 @@ export default function AdminDashboard() {
       {/* ENROLLMENTS TAB */}
       {activeTab === 'enrollments' && (() => {
         // Aggregate all enrollments from all users
-        const allEnrollments = users.reduce((acc, user) => {
+        // UNIFIED ENROLLMENT LOGIC: Combine Course.enrollments and User.courseAccess
+        const allEnrollments = [];
+
+        // 1. Get from users' active access (Paid/Manual)
+        users.forEach(user => {
           const access = user.courseAccess || [];
-          const enrollments = access.map(a => ({
-            ...a,
-            studentName: user.name,
-            studentEmail: user.email,
-            userId: user._id || user.id,
-            enrolledAt: a.createdAt || user.createdAt // Fallback to user creation if no specific date
-          }));
-          return [...acc, ...enrollments];
-        }, []);
+          access.forEach(a => {
+            allEnrollments.push({
+              courseId: a.courseId,
+              studentName: user.name,
+              studentEmail: user.email,
+              userId: user._id || user.id,
+              enrolledAt: a.createdAt || user.createdAt,
+              status: 'ACTIVE'
+            });
+          });
+          
+          // Legacy check
+          if (user.purchasedCourses) {
+            user.purchasedCourses.forEach(id => {
+              if (!allEnrollments.find(e => e.userId === (user._id || user.id) && e.courseId === id)) {
+                allEnrollments.push({
+                  courseId: id,
+                  studentName: user.name,
+                  studentEmail: user.email,
+                  userId: user._id || user.id,
+                  enrolledAt: user.createdAt,
+                  status: 'LEGACY'
+                });
+              }
+            });
+          }
+        });
+
+        // 2. Get from courses' enrollment records (Registered/Interested)
+        courses.forEach(course => {
+          if (course.enrollments) {
+            course.enrollments.forEach(e => {
+              const uId = e.userId?._id || e.userId;
+              // Avoid duplicates if already added from courseAccess
+              const exists = allEnrollments.find(ae => ae.userId.toString() === uId.toString() && ae.courseId === course.id);
+              if (!exists) {
+                allEnrollments.push({
+                  courseId: course.id,
+                  studentName: e.name || 'Unknown',
+                  studentEmail: e.email || '',
+                  userId: uId,
+                  enrolledAt: e.enrolledAt || course.createdAt,
+                  status: 'ENROLLED' // User clicked "Enroll" but access not yet granted/paid
+                });
+              }
+            });
+          }
+        });
+
+        // Sort by date (descending)
+        allEnrollments.sort((a, b) => new Date(b.enrolledAt) - new Date(a.enrolledAt));
 
         const now = new Date();
         const filtered = allEnrollments.filter(e => {
@@ -765,7 +811,7 @@ export default function AdminDashboard() {
                     <th style={{ padding: '16px' }}>Course</th>
                     <th style={{ padding: '16px' }}>Enrolled On</th>
                     <th style={{ padding: '16px' }}>Expiry</th>
-                    <th style={{ padding: '16px', textAlign: 'right' }}>Status</th>
+                    <th style={{ padding: '16px' }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -779,6 +825,8 @@ export default function AdminDashboard() {
                     filtered.map((enr, idx) => {
                       const course = courses.find(c => c.id === enr.courseId);
                       const isExpiringSoon = enr.expiresAt && (new Date(enr.expiresAt) - now) / (1000 * 60 * 60 * 24) < 7;
+                      const isEnrolledOnly = enr.status === 'ENROLLED';
+
                       return (
                         <tr key={`${enr.userId}-${enr.courseId}-${idx}`} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                           <td style={{ padding: '16px' }}>
@@ -789,22 +837,22 @@ export default function AdminDashboard() {
                             <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course?.title || enr.courseId}</span>
                           </td>
                           <td style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            {new Date(enr.enrolledAt).toLocaleDateString()}
+                            {new Date(enr.enrolledAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
                           </td>
                           <td style={{ padding: '16px', fontSize: '0.9rem', color: isExpiringSoon ? 'var(--warning)' : 'var(--text-secondary)' }}>
                             {enr.expiresAt ? new Date(enr.expiresAt).toLocaleDateString() : '♾️ Lifetime'}
                           </td>
-                          <td style={{ padding: '16px', textAlign: 'right' }}>
+                          <td style={{ padding: '16px' }}>
                             <span style={{ 
-                              fontSize: '0.75rem', 
+                              fontSize: '0.7rem', 
                               padding: '4px 10px', 
-                              borderRadius: '100px', 
-                              fontWeight: 700,
-                              background: enrollmentType === 'active' ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
-                              color: enrollmentType === 'active' ? 'var(--success)' : 'var(--danger)',
-                              border: enrollmentType === 'active' ? '1px solid var(--success)' : '1px solid var(--danger)'
+                              borderRadius: '4px', 
+                              fontWeight: 'bold',
+                              background: isEnrolledOnly ? 'rgba(234, 179, 8, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                              color: isEnrolledOnly ? '#92400e' : '#166534',
+                              border: `1px solid ${isEnrolledOnly ? '#facc15' : '#22c55e'}50`
                             }}>
-                              {enrollmentType.toUpperCase()}
+                              {enr.status}
                             </span>
                           </td>
                         </tr>

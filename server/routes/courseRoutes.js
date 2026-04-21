@@ -163,6 +163,10 @@ router.post('/:id/enroll', protect, async (req, res) => {
       email: req.user.email
     });
     
+    // Update uniqueStudentsCount stat
+    course.stats = course.stats || {};
+    course.stats.uniqueStudentsCount = course.enrollments.length;
+    
     await course.save();
     res.json({ message: 'Enrolled successfully', course });
   } catch (error) {
