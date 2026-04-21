@@ -39,11 +39,11 @@ function App() {
   useEffect(() => {
     const fetchAnnouncement = async () => {
       try {
-        const settings = await db.getSettings();
-        if (settings && settings.announcementMessage) {
+        const settings = await db.getGlobalSettings();
+        if (settings) {
           setAnnouncement({
-            message: settings.announcementMessage,
-            expiresAt: settings.announcementExpiresAt
+            message: settings.announcementMessage || '',
+            expiresAt: settings.announcementExpiresAt || null
           });
         }
       } catch (err) {
