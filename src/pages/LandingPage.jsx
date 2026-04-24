@@ -103,14 +103,14 @@ export default function LandingPage() {
             )}
           </div>
           <h1 className="animate-fade-in" style={{ 
-            fontSize: 'clamp(3rem, 6vw, 5.5rem)', 
+            fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', 
             fontWeight: 800, 
             marginBottom: '24px', 
             lineHeight: 1.1,
             animationDelay: '0.1s'
           }}>
-            Master Shorthand with <br />
-            <span className="text-gradient glow-text" style={{ paddingBottom: '10px' }}>AI-Powered Precision</span>
+            Master Shorthand for <br />
+            <span className="text-gradient glow-text" style={{ paddingBottom: '10px' }}>SSC & High Court Exams</span>
           </h1>
           
           <p className="animate-fade-in" style={{ fontSize: '1.4rem', color: 'var(--text-secondary)', marginBottom: '40px', lineHeight: 1.6, animationDelay: '0.2s', maxWidth: '700px', margin: '0 auto 40px' }}>
@@ -178,8 +178,8 @@ export default function LandingPage() {
       <section style={{ padding: '120px 20px' }}>
         <div className="container" style={{ maxWidth: '1200px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '80px' }}>
-            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', marginBottom: '16px' }}>Premium <span className="text-gradient">Student Experience</span></h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>Everything you need to master English shorthand speed and accuracy.</p>
+            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', marginBottom: '16px' }}>India's #1 <span className="text-gradient">Stenography Platform</span></h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto' }}>Specialized practice for SSC Stenographer Grade C & D, High Court, and Pitman Shorthand.</p>
           </div>
           
           <div style={{ 
@@ -300,7 +300,7 @@ export default function LandingPage() {
       {/* Bottom CTA */}
       <section style={{ padding: '100px 20px', textAlign: 'center' }}>
         <div className="glass-panel" style={{ padding: '80px 40px', background: 'linear-gradient(135deg, rgba(var(--primary-rgb), 0.1), rgba(var(--secondary-rgb), 0.1))' }}>
-          <h2 style={{ fontSize: '3.5rem', marginBottom: '24px' }}>Ready to Scale Your Speed?</h2>
+          <h2 style={{ fontSize: '3.5rem', marginBottom: '24px' }}>Clear Your SSC Skill Test</h2>
           <p style={{ fontSize: '1.2rem', marginBottom: '32px' }}>Join 1,200+ students already mastering shorthand with us.</p>
           <Link to="/register" className="btn btn-primary btn-lg">Join the Academy Now</Link>
         </div>
