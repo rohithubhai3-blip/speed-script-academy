@@ -1514,7 +1514,7 @@ export default function AdminDashboard() {
                     placeholder="Type a message to show on top of every page..."
                     style={{ minHeight: '80px', marginBottom: '12px' }}
                   />
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                     <div>
                       <label className="input-label" style={{ fontSize: '0.8rem' }}>Display Until</label>
                       <input 
@@ -1524,12 +1524,23 @@ export default function AdminDashboard() {
                         onChange={e => setGlobalSettings({...globalSettings, announcementExpiresAt: e.target.value})} 
                       />
                     </div>
+                    <div>
+                      <label className="input-label" style={{ fontSize: '0.8rem' }}>Popup Duration (Sec)</label>
+                      <input 
+                        type="number" 
+                        className="input-field" 
+                        value={globalSettings.announcementDuration || 10} 
+                        onChange={e => setGlobalSettings({...globalSettings, announcementDuration: parseInt(e.target.value) || 0})} 
+                        min="1"
+                        max="300"
+                      />
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                       <button 
                         type="button" 
                         className="btn" 
                         style={{ width: '100%', background: 'rgba(244, 63, 94, 0.1)', color: 'var(--danger)', border: '1px solid var(--danger)' }}
-                        onClick={() => setGlobalSettings({...globalSettings, announcementMessage: '', announcementExpiresAt: null})}
+                        onClick={() => setGlobalSettings({...globalSettings, announcementMessage: '', announcementExpiresAt: null, announcementDuration: 10})}
                       >
                         Clear Message
                       </button>

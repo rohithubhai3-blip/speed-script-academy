@@ -43,7 +43,8 @@ function App() {
         if (settings) {
           setAnnouncement({
             message: settings.announcementMessage || '',
-            expiresAt: settings.announcementExpiresAt || null
+            expiresAt: settings.announcementExpiresAt || null,
+            duration: settings.announcementDuration || 10
           });
         }
       } catch (err) {

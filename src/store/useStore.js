@@ -5,7 +5,7 @@ const useStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('ssa_user')) || null,
   activeTest: null,
   theme: localStorage.getItem('ssa_theme') || 'dark',
-  announcement: { message: '', expiresAt: null },
+  announcement: { message: '', expiresAt: null, duration: 10 },
   
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'lite' ? 'dark' : 'lite';

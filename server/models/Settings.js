@@ -8,6 +8,7 @@ const settingsSchema = new mongoose.Schema({
   // Global Notification Fields
   announcementMessage: { type: String, default: '' },
   announcementExpiresAt: { type: Date, default: null },
+  announcementDuration: { type: Number, default: 10 }, // Default 10 seconds
   updatedAt: { type: Date, default: Date.now }
 });
 
