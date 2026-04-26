@@ -3,9 +3,12 @@ import { create } from 'zustand';
 // Temporary mock user for ease of development. Later we initialize with null.
 const useStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('ssa_user')) || null,
+  authVerified: false, // Set to true only after backend verifies the token
   activeTest: null,
   theme: localStorage.getItem('ssa_theme') || 'dark',
   announcement: { message: '', expiresAt: null, duration: 10 },
+  
+  setAuthVerified: (val) => set({ authVerified: val }),
   
   toggleTheme: () => set((state) => {
     const newTheme = state.theme === 'lite' ? 'dark' : 'lite';

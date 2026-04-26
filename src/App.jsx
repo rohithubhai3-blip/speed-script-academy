@@ -22,10 +22,20 @@ import ModalContainer from './components/ModalContainer';
 import AnnouncementBanner from './components/AnnouncementBanner';
 import { db, warmupServer } from './services/api';
 
-// Protected Route Component
+// Protected Route Component — now checks authVerified flag
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
   const user = useStore(state => state.user);
+  const authVerified = useStore(state => state.authVerified);
   
+  // While verification is in progress, show a loading state
+  if (!authVerified) {
+    return (
+      <div style={{ padding: '100px 20px', textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <h3 className="animate-pulse">Verifying your session...</h3>
+      </div>
+    );
+  }
+
   if (!user) return <Navigate to="/login" replace />;
   if (requireAdmin && user.role !== 'admin') return <Navigate to="/dashboard" replace />;
   
@@ -34,7 +44,38 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
 function App() {
   const theme = useStore(state => state.theme);
+  const user = useStore(state => state.user);
   const setAnnouncement = useStore(state => state.setAnnouncement);
+  const logout = useStore(state => state.logout);
+  const setAuthVerified = useStore(state => state.setAuthVerified);
+  const updateUser = useStore(state => state.updateUser);
+
+  // ── TOKEN VERIFICATION on app startup ──
+  // Prevents fake localStorage injection (e.g. console hacking)
+  useEffect(() => {
+    const verifyAuth = async () => {
+      const storedUser = JSON.parse(localStorage.getItem('ssa_user'));
+      if (!storedUser || !storedUser.token) {
+        // No stored user or no token — nothing to verify
+        setAuthVerified(true);
+        return;
+      }
+
+      try {
+        // Call backend to verify the token is real and get fresh user data
+        const freshUser = await db.getMe();
+        // Token is valid — update store with fresh server data (keeps token)
+        updateUser({ ...freshUser, token: storedUser.token });
+        setAuthVerified(true);
+      } catch (err) {
+        // Token is fake/expired/invalid → force logout
+        console.warn('[AUTH] Token verification failed. Logging out.', err.message);
+        logout();
+        setAuthVerified(true);
+      }
+    };
+    verifyAuth();
+  }, []);
 
   useEffect(() => {
     const fetchAnnouncement = async () => {
