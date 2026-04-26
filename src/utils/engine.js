@@ -43,11 +43,33 @@ function levenshtein(a, b) {
 }
 
 // -------------------------------------------------------
+// TEXT NORMALIZER — converts smart quotes, removes invisible chars
+// This fixes the #1 cause of false mistakes: admin pastes from
+// Word/Docs which inserts curly quotes (e.g. right single quote)
+// instead of straight ones. Users type straight quotes from keyboard.
+// -------------------------------------------------------
+function normalizeText(text) {
+  return text
+    // Smart/curly single quotes to straight apostrophe
+    .replace(/[\u2018\u2019\u201A\u2032\u0060]/g, "'")
+    // Smart/curly double quotes to straight double quote
+    .replace(/[\u201C\u201D\u201E\u2033]/g, '"')
+    // En-dash / Em-dash to hyphen
+    .replace(/[\u2013\u2014]/g, '-')
+    // Ellipsis character to three dots
+    .replace(/\u2026/g, '...')
+    // Remove zero-width characters (ZWJ, ZWNJ, ZW-Space, BOM, soft-hyphen)
+    .replace(/[\u200B\u200C\u200D\uFEFF\u00AD\u200E\u200F]/g, '')
+    // Non-breaking space to regular space
+    .replace(/\u00A0/g, ' ');
+}
+
+// -------------------------------------------------------
 // WORD TOKENIZER — handles punctuation per rules
 // Keeps punctuation attached so we can detect full-stop mistakes
 // -------------------------------------------------------
 export function getWords(text) {
-  return text
+  return normalizeText(text)
     .replace(/\r?\n/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -57,7 +79,7 @@ export function getWords(text) {
 
 // Strip all punctuation from a word for clean comparison
 function stripPunct(w) {
-  return w.replace(/[.,!?;:'"()\-–—]/g, '');
+  return w.replace(/[.,!?;:'"()\-\u2013\u2014\u2018\u2019\u201C\u201D]/g, '');
 }
 
 // Check if a word ends with a full stop

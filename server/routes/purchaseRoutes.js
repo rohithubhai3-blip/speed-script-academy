@@ -159,15 +159,20 @@ router.post('/promos/generate', protect, adminOnly, async (req, res) => {
 router.post('/redeem', protect, async (req, res) => {
   const { promoCode: code } = req.body;
   try {
-    const promo = await PromoCode.findOne({ code });
-    if (!promo) return res.status(404).json({ message: 'Invalid or Expired Promo Code' });
-    if (promo.isUsed) return res.status(400).json({ message: 'This code has already been used.' });
+    // ATOMIC: find the promo code and mark it as used in a single DB operation
+    // This prevents race conditions where multiple requests claim the same code
+    const promo = await PromoCode.findOneAndUpdate(
+      { code, isUsed: false },
+      { $set: { isUsed: true, usedBy: req.user._id, usedAt: new Date() } },
+      { new: true }
+    );
 
-    // Mark as used
-    promo.isUsed = true;
-    promo.usedBy = req.user._id;
-    promo.usedAt = new Date();
-    await promo.save();
+    if (!promo) {
+      // Either code doesn't exist or was already used
+      const exists = await PromoCode.findOne({ code });
+      if (exists) return res.status(400).json({ message: 'This code has already been used.' });
+      return res.status(404).json({ message: 'Invalid or Expired Promo Code' });
+    }
 
     // Grant access to user
     const user = await User.findById(req.user._id);

@@ -30,12 +30,12 @@ router.post('/register', async (req, res) => {
     }
 
     console.log(`[AUTH] Creating user: ${email}, Role: ${role}`);
-    const user = await User.create({ 
-      name, 
-      email, 
-      password, 
+    const user = await User.create({
+      name,
+      email,
+      password,
       role,
-      purchasedCourses: [] 
+      purchasedCourses: []
     });
 
     if (user) {
@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
     }
   } catch (error) {
     console.error("REGISTRATION ERROR:", error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: error.message || "Registration failed on server",
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
@@ -117,7 +117,7 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     // Safety: Prevent admin from deleting themselves
     if (user._id.toString() === req.user._id.toString()) {
       return res.status(400).json({ message: 'You cannot delete your own admin account' });
@@ -164,7 +164,7 @@ router.put('/:id/reset-password', protect, adminOnly, async (req, res) => {
 
     user.password = password; // The pre-save hook in User.js will hash this
     await user.save();
-    
+
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -176,7 +176,7 @@ router.get('/me', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    
+
     // Return fresh data minus password
     res.json({
       _id: user._id,

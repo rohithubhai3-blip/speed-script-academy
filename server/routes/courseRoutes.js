@@ -4,10 +4,13 @@ import CourseModel from '../models/Course.js';
 
 const router = express.Router();
 
-// @route   GET /api/courses
+// @route   GET /api/courses (Public — returns metadata only, NO lesson content)
 router.get('/', async (req, res) => {
   try {
-    const courses = await CourseModel.find({});
+    // Exclude sensitive lesson fields (passage, audio, media) from public listing
+    // This prevents unpaid users from downloading premium content via the API
+    const courses = await CourseModel.find({})
+      .select('-levels.lessons.passage -levels.lessons.audioUrl -levels.lessons.mediaUrl -enrollments');
     res.json(courses);
   } catch (error) {
     res.status(500).json({ message: error.message });
