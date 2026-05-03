@@ -1554,12 +1554,16 @@ export default function AdminDashboard() {
               <div style={{ textAlign: 'center', background: 'var(--bg-base)', borderRadius: '12px', padding: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <h4 style={{ marginBottom: '16px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>QR Code Preview</h4>
                 {globalSettings.qrCodeUrl ? (
-                  <img src={globalSettings.qrCodeUrl} alt="QR Code" style={{ maxWidth: '200px', borderRadius: '8px', boxShadow: 'var(--shadow-drop)' }} />
+                  <img src={globalSettings.qrCodeUrl} alt="QR Code" style={{ maxWidth: '200px', borderRadius: '8px', boxShadow: 'var(--shadow-drop)', marginBottom: '16px' }} />
                 ) : (
-                  <div style={{ width: '200px', height: '200px', border: '2px dashed var(--border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
+                  <div style={{ width: '200px', height: '200px', border: '2px dashed var(--border-color)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', marginBottom: '16px' }}>
                     No QR Uploaded
                   </div>
                 )}
+                <label style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '6px', fontSize: '0.9rem' }}>
+                  <Upload size={16} /> Upload New QR
+                  <input type="file" accept="image/*" onChange={handleQRUpload} style={{ display: 'none' }} />
+                </label>
               </div>
             </div>
           </form>
