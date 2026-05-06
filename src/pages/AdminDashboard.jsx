@@ -1090,13 +1090,7 @@ export default function AdminDashboard() {
                           <td style={{ padding: '16px', textAlign: 'right' }}>
                             <button onClick={() => {
                                 const userObj = users.find(u => (u._id || u.id) === p.userId);
-                                if (userObj) {
-                                  setSelectedUserForAccess(userObj);
-                                  setUserCourseAccess(userObj.courseAccess || []);
-                                  setAccessGrantCourseId('');
-                                  setAccessGrantDays('lifetime');
-                                  showModal('adminUserAccessModal');
-                                }
+                                if (userObj) openAccessModal(userObj);
                               }}
                               style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '6px', color: 'var(--primary)', cursor: 'pointer', padding: '6px 8px', display: 'inline-flex', alignItems: 'center' }}
                               title="Manage Course Access">
@@ -2134,6 +2128,10 @@ export default function AdminDashboard() {
                      <div className="input-group">
                         <label className="input-label">Support Phone</label>
                         <input type="text" className="input-field" value={siteContent.contact.phone} onChange={e => setSiteContent({...siteContent, contact: {...siteContent.contact, phone: e.target.value}})} />
+                     </div>
+                     <div className="input-group">
+                        <label className="input-label">Support WhatsApp</label>
+                        <input type="text" className="input-field" value={siteContent.contact.whatsapp} onChange={e => setSiteContent({...siteContent, contact: {...siteContent.contact, whatsapp: e.target.value}})} placeholder="Include country code (e.g. 919877878802)" />
                      </div>
                      <div className="input-group">
                         <label className="input-label">Address</label>
