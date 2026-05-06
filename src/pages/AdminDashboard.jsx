@@ -42,6 +42,7 @@ export default function AdminDashboard() {
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
 
   // User Management State
+  const [usersSearch, setUsersSearch] = useState('');
   const [selectedUserForAccess, setSelectedUserForAccess] = useState(null);
   const [userCourseAccess, setUserCourseAccess] = useState([]); // [{courseId, expiresAt}]
   const [accessGrantCourseId, setAccessGrantCourseId] = useState('');
@@ -1023,12 +1024,13 @@ export default function AdminDashboard() {
                     <th style={{ padding: '16px' }}>Expiry Date</th>
                     <th style={{ padding: '16px' }}>Duration Left</th>
                     <th style={{ padding: '16px' }}>Status</th>
+                    <th style={{ padding: '16px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredPaid.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <td colSpan="7" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
                         No paid users found matching your filters.
                       </td>
                     </tr>
@@ -1085,6 +1087,22 @@ export default function AdminDashboard() {
                               {isExpired ? 'EXPIRED' : 'ACTIVE'}
                             </span>
                           </td>
+                          <td style={{ padding: '16px', textAlign: 'right' }}>
+                            <button onClick={() => {
+                                const userObj = users.find(u => (u._id || u.id) === p.userId);
+                                if (userObj) {
+                                  setSelectedUserForAccess(userObj);
+                                  setUserCourseAccess(userObj.courseAccess || []);
+                                  setAccessGrantCourseId('');
+                                  setAccessGrantDays('lifetime');
+                                  showModal('adminUserAccessModal');
+                                }
+                              }}
+                              style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.3)', borderRadius: '6px', color: 'var(--primary)', cursor: 'pointer', padding: '6px 8px', display: 'inline-flex', alignItems: 'center' }}
+                              title="Manage Course Access">
+                              <ShieldCheck size={15} />
+                            </button>
+                          </td>
                         </tr>
                       );
                     })
@@ -1112,6 +1130,18 @@ export default function AdminDashboard() {
                 </span>
               </div>
             </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <input 
+                type="text" 
+                placeholder="Search by student name or email..." 
+                className="input-field"
+                value={usersSearch}
+                onChange={e => setUsersSearch(e.target.value)}
+                style={{ width: '100%', maxWidth: '500px' }}
+              />
+            </div>
+
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                 <thead>
@@ -1124,7 +1154,10 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map(u => {
+                  {users.filter(u => 
+                    u.name?.toLowerCase().includes(usersSearch.toLowerCase()) || 
+                    u.email?.toLowerCase().includes(usersSearch.toLowerCase())
+                  ).map(u => {
                     const isAdmin = u.role === 'admin';
                     // Unified access list
                     const accessList = u.courseAccess?.length > 0
