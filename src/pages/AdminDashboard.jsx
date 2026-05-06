@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock, Mail, Megaphone } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock, Mail, Megaphone, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 
@@ -28,6 +28,11 @@ export default function AdminDashboard() {
   // Enrollments State
   const [enrollmentSearch, setEnrollmentSearch] = useState('');
   const [enrollmentType, setEnrollmentType] = useState('active'); // active | expired
+
+  // Paid Users State
+  const [paidUsersSearch, setPaidUsersSearch] = useState('');
+  const [paidUsersFilter, setPaidUsersFilter] = useState('all'); // all | active | expired
+  const [paidUsersCourseFilter, setPaidUsersCourseFilter] = useState('all'); // all | courseId
 
   // Forms states
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -570,6 +575,9 @@ export default function AdminDashboard() {
           <button className={`btn ${activeTab === 'enrollments' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('enrollments')}>
             <BookOpen size={18} /> Enrollments
           </button>
+          <button className={`btn ${activeTab === 'paid-users' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('paid-users')}>
+            <DollarSign size={18} /> Paid Users
+          </button>
         </div>
       </div>
 
@@ -853,6 +861,228 @@ export default function AdminDashboard() {
                               border: `1px solid ${isEnrolledOnly ? '#facc15' : '#22c55e'}50`
                             }}>
                               {enr.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* PAID USERS TAB */}
+      {activeTab === 'paid-users' && (() => {
+        const allPaid = [];
+        const now = new Date();
+
+        users.forEach(user => {
+          // 1. Current Access
+          if (user.courseAccess && user.courseAccess.length > 0) {
+            user.courseAccess.forEach(a => {
+              allPaid.push({
+                userId: user._id || user.id,
+                studentName: user.name,
+                studentEmail: user.email,
+                courseId: a.courseId,
+                enrolledAt: a.createdAt || user.createdAt,
+                expiresAt: a.expiresAt,
+                paymentStatus: 'Paid / Manual Approval',
+                type: 'access'
+              });
+            });
+          }
+          // 2. Legacy Purchased Courses
+          if (user.purchasedCourses && user.purchasedCourses.length > 0) {
+            user.purchasedCourses.forEach(courseId => {
+              // Avoid duplicates if already added via courseAccess
+              if (!allPaid.find(p => p.userId === (user._id || user.id) && p.courseId === courseId)) {
+                allPaid.push({
+                  userId: user._id || user.id,
+                  studentName: user.name,
+                  studentEmail: user.email,
+                  courseId: courseId,
+                  enrolledAt: user.createdAt,
+                  expiresAt: null, // Lifetime
+                  paymentStatus: 'Legacy Paid',
+                  type: 'legacy'
+                });
+              }
+            });
+          }
+        });
+
+        // Filter and Sort
+        const filteredPaid = allPaid.filter(p => {
+          const course = courses.find(c => c.id === p.courseId);
+          const courseName = course?.title || p.courseId;
+          const searchLower = paidUsersSearch.toLowerCase();
+          
+          const matchesSearch = 
+            p.studentName?.toLowerCase().includes(searchLower) ||
+            p.studentEmail?.toLowerCase().includes(searchLower);
+            
+          const isExpired = p.expiresAt && new Date(p.expiresAt) <= now;
+          const matchesType = paidUsersFilter === 'all' 
+            ? true 
+            : paidUsersFilter === 'active' 
+              ? !isExpired 
+              : isExpired;
+
+          const matchesCourse = paidUsersCourseFilter === 'all' || p.courseId === paidUsersCourseFilter;
+
+          return matchesSearch && matchesType && matchesCourse;
+        }).sort((a, b) => {
+           // Sort by Expiry Date by default (Expiring soonest first, lifetime last)
+           if (!a.expiresAt && !b.expiresAt) return new Date(b.enrolledAt) - new Date(a.enrolledAt);
+           if (!a.expiresAt) return 1;
+           if (!b.expiresAt) return -1;
+           return new Date(a.expiresAt) - new Date(b.expiresAt);
+        });
+
+        const activeCount = allPaid.filter(p => !p.expiresAt || new Date(p.expiresAt) > now).length;
+        const expiredCount = allPaid.length - activeCount;
+
+        return (
+          <div className="glass-panel" style={{ padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+              <div>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Paid Users Management</h2>
+                <p style={{ color: 'var(--text-secondary)' }}>Manage subscriptions and track paid access.</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '4px', display: 'flex', gap: '4px' }}>
+                  <button 
+                    onClick={() => setPaidUsersFilter('all')}
+                    style={{ 
+                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                      background: paidUsersFilter === 'all' ? 'var(--primary)' : 'transparent',
+                      color: paidUsersFilter === 'all' ? 'white' : 'var(--text-secondary)'
+                    }}
+                  >
+                    All ({allPaid.length})
+                  </button>
+                  <button 
+                    onClick={() => setPaidUsersFilter('active')}
+                    style={{ 
+                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                      background: paidUsersFilter === 'active' ? 'rgba(34, 197, 94, 0.2)' : 'transparent',
+                      color: paidUsersFilter === 'active' ? '#22c55e' : 'var(--text-secondary)'
+                    }}
+                  >
+                    Active ({activeCount})
+                  </button>
+                  <button 
+                    onClick={() => setPaidUsersFilter('expired')}
+                    style={{ 
+                      padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                      background: paidUsersFilter === 'expired' ? 'rgba(244, 63, 94, 0.2)' : 'transparent',
+                      color: paidUsersFilter === 'expired' ? '#f43f5e' : 'var(--text-secondary)'
+                    }}
+                  >
+                    Expired ({expiredCount})
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                placeholder="Search by student name or email..." 
+                className="input-field"
+                value={paidUsersSearch}
+                onChange={e => setPaidUsersSearch(e.target.value)}
+                style={{ flex: '1 1 300px', maxWidth: '500px' }}
+              />
+              
+              <select 
+                className="input-field" 
+                value={paidUsersCourseFilter} 
+                onChange={e => setPaidUsersCourseFilter(e.target.value)}
+                style={{ flex: '0 0 250px' }}
+              >
+                <option value="all">All Plans / Courses</option>
+                {courses.filter(c => c.price > 0).map(c => (
+                  <option key={c.id} value={c.id}>{c.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
+                <thead style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                  <tr>
+                    <th style={{ padding: '16px' }}>Student</th>
+                    <th style={{ padding: '16px' }}>Active Plan</th>
+                    <th style={{ padding: '16px' }}>Start Date</th>
+                    <th style={{ padding: '16px' }}>Expiry Date</th>
+                    <th style={{ padding: '16px' }}>Duration Left</th>
+                    <th style={{ padding: '16px' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPaid.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        No paid users found matching your filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredPaid.map((p, idx) => {
+                      const course = courses.find(c => c.id === p.courseId);
+                      const isExpired = p.expiresAt && new Date(p.expiresAt) <= now;
+                      const isExpiringSoon = p.expiresAt && (new Date(p.expiresAt) - now) / (1000 * 60 * 60 * 24) < 7 && !isExpired;
+                      
+                      let durationLeft = "Lifetime";
+                      if (p.expiresAt) {
+                         if (isExpired) {
+                            durationLeft = "Expired";
+                         } else {
+                            const days = Math.ceil((new Date(p.expiresAt) - now) / (1000 * 60 * 60 * 24));
+                            durationLeft = `${days} Days`;
+                         }
+                      }
+
+                      return (
+                        <tr key={`${p.userId}-${p.courseId}-${idx}`} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                          <td style={{ padding: '16px' }}>
+                            <div style={{ fontWeight: 600 }}>{p.studentName}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.studentEmail}</div>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{course?.title || p.courseId}</span>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>{p.paymentStatus}</div>
+                          </td>
+                          <td style={{ padding: '16px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                            {new Date(p.enrolledAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </td>
+                          <td style={{ padding: '16px', fontSize: '0.9rem', color: isExpired ? 'var(--danger)' : isExpiringSoon ? 'var(--warning)' : 'var(--text-secondary)' }}>
+                            {p.expiresAt ? new Date(p.expiresAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '♾️ No Expiry'}
+                          </td>
+                          <td style={{ padding: '16px', fontSize: '0.9rem' }}>
+                             <span style={{ 
+                                color: isExpired ? 'var(--danger)' : isExpiringSoon ? 'var(--warning)' : 'var(--success)',
+                                fontWeight: 600 
+                             }}>
+                                {durationLeft}
+                             </span>
+                          </td>
+                          <td style={{ padding: '16px' }}>
+                            <span style={{ 
+                              fontSize: '0.75rem', 
+                              padding: '6px 12px', 
+                              borderRadius: '100px', 
+                              fontWeight: 'bold',
+                              background: isExpired ? 'rgba(244, 63, 94, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                              color: isExpired ? '#f43f5e' : '#22c55e',
+                              border: `1px solid ${isExpired ? '#f43f5e' : '#22c55e'}50`
+                            }}>
+                              {isExpired ? 'EXPIRED' : 'ACTIVE'}
                             </span>
                           </td>
                         </tr>
