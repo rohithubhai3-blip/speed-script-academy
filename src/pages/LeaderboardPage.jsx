@@ -5,15 +5,30 @@ import useStore from '../store/useStore';
 
 export default function LeaderboardPage() {
   const [filter, setFilter] = useState('weekly');
+  const [courses, setCourses] = useState([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [selectedLessonId, setSelectedLessonId] = useState('');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const user = useStore(s => s.user);
 
   useEffect(() => {
+    async function init() {
+      try {
+        const c = await db.getCourses();
+        setCourses(c);
+      } catch (err) {
+        console.error("Failed to load courses for leaderboard", err);
+      }
+    }
+    init();
+  }, []);
+
+  useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const res = await db.getLeaderboard(filter);
+        const res = await db.getLeaderboard(filter, selectedLessonId);
         setData(res);
       } catch (err) {
         console.error(err);
@@ -22,7 +37,13 @@ export default function LeaderboardPage() {
       }
     }
     load();
-  }, [filter]);
+  }, [filter, selectedLessonId]);
+
+  const selectedCourse = courses.find(c => c.id === selectedCourseId);
+  const availableLessons = selectedCourse 
+    ? selectedCourse.levels.flatMap(l => l.lessons) 
+    : [];
+  const selectedLesson = availableLessons.find(l => l.id === selectedLessonId);
 
   const top3 = data.slice(0, 3);
   const restUser = data.slice(3);
@@ -36,25 +57,67 @@ export default function LeaderboardPage() {
 
   return (
     <div style={{ padding: '0', animation: 'fadeIn 0.3s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '20px' }}>
+        <div style={{ flex: '1 1 300px' }}>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Trophy color="#fbbf24" size={36} /> Global Leaderboard
+            <Trophy color="#fbbf24" size={36} /> {selectedLesson ? 'Test Leaderboard' : 'Global Leaderboard'}
           </h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Compete with top shorthand learners. Filter by time to see daily or weekly champions.</p>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {selectedLesson ? `Viewing rankings for test: ${selectedLesson.title}` : 'Compete with top shorthand learners across all tests.'} Filter by time or select a specific test.
+          </p>
         </div>
         
-        <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-          {['daily', 'weekly', 'all-time'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
-              background: filter === f ? 'var(--primary)' : 'transparent',
-              color: filter === f ? '#fff' : 'var(--text-secondary)',
-              border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}>
-              {f === 'daily' ? 'Today' : f === 'weekly' ? 'This Week' : 'All-Time'}
-            </button>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'flex-end' }}>
+          {/* COURSE & TEST SELECTORS */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <select 
+              value={selectedCourseId} 
+              onChange={e => {
+                setSelectedCourseId(e.target.value);
+                setSelectedLessonId(''); // Reset lesson when course changes
+              }}
+              style={{
+                background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
+                padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem', outline: 'none', cursor: 'pointer'
+              }}
+            >
+              <option value="">All Courses (Global)</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+            </select>
+
+            {selectedCourseId && (
+              <select
+                value={selectedLessonId}
+                onChange={e => setSelectedLessonId(e.target.value)}
+                style={{
+                  background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-color)',
+                  padding: '8px 12px', borderRadius: '8px', fontSize: '0.9rem', outline: 'none', cursor: 'pointer', maxWidth: '250px'
+                }}
+              >
+                <option value="">All Tests in Course</option>
+                {selectedCourse?.levels.map(lvl => (
+                  <optgroup key={lvl.id} label={`${lvl.title} Level`}>
+                    {lvl.lessons.map(lsn => (
+                      <option key={lsn.id} value={lsn.id}>{lsn.title}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', background: 'var(--bg-surface)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            {['daily', 'weekly', 'all-time'].map(f => (
+              <button key={f} onClick={() => setFilter(f)} style={{
+                background: filter === f ? 'var(--primary)' : 'transparent',
+                color: filter === f ? '#fff' : 'var(--text-secondary)',
+                border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}>
+                {f === 'daily' ? 'Today' : f === 'weekly' ? 'This Week' : 'All-Time'}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

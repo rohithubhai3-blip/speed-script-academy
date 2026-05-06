@@ -155,8 +155,10 @@ export const db = {
     return res.data;
   },
 
-  async getLeaderboard(filter = 'weekly') {
-    const res = await api.get(`/results/leaderboard?filter=${filter}`);
+  async getLeaderboard(filter = 'weekly', lessonId = '') {
+    let url = `/results/leaderboard?filter=${filter}`;
+    if (lessonId) url += `&lessonId=${lessonId}`;
+    const res = await api.get(url);
     return res.data;
   },
 
