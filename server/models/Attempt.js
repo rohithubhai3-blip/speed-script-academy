@@ -11,6 +11,7 @@ const attemptSchema = new mongoose.Schema({
   accuracy:         { type: Number, required: true },
   errorPercent:     { type: Number, default: 0 },
   mistakes:         { type: Number, default: 0 },   // total error units (backward compat)
+  duration:         { type: Number, default: 0 },
   fullMistakes:     { type: Number, default: 0 },
   halfMistakes:     { type: Number, default: 0 },
   totalWords:       { type: Number, default: 0 },

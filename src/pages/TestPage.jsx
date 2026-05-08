@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Check } from 'lucide-react';
+import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Check, Clock } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { analyzeTestResult } from '../utils/engine';
@@ -18,6 +18,9 @@ export default function TestPage() {
   const [warnings, setWarnings] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [timeLeft, setTimeLeft] = useState(300); // Default to 300s (5m) instead of null
+  const [maxDurationSecs, setMaxDurationSecs] = useState(300);
+  const [selectedMinutes, setSelectedMinutes] = useState(5);
+  const [selectedSeconds, setSelectedSeconds] = useState(0);
   const [targetWpm, setTargetWpm] = useState(80);
   const [baseWpm, setBaseWpm] = useState(80);
   const [lastLockedIndex, setLastLockedIndex] = useState(0);
@@ -74,6 +77,9 @@ export default function TestPage() {
         }
 
         if (!secs || isNaN(secs) || secs < 0) secs = 300;
+        setMaxDurationSecs(secs);
+        setSelectedMinutes(Math.floor(secs / 60));
+        setSelectedSeconds(secs % 60);
         setTimeLeft(secs);
         
         // Initialize WPM
@@ -178,6 +184,9 @@ export default function TestPage() {
     // Set to ready state - timer won't start until they type first char
     setStatus("typing_ready");
     
+    // Set timer to the user's selected duration
+    setTimeLeft(selectedMinutes * 60 + selectedSeconds);
+    
     // Focus typing box after a short delay to allow UI to render
     setTimeout(() => {
       if(textAreaRef.current) textAreaRef.current.focus();
@@ -207,7 +216,13 @@ export default function TestPage() {
       // Safety: If startTime was never set (test ended without typing), use a default
       const timeTakenMs = startTime ? (Date.now() - startTime) : 1000;
       let timeTakenMin = timeTakenMs / 60000;
-      if (timeTakenMin <= 0) timeTakenMin = 0.01;
+      
+      const selectedDurationMin = (selectedMinutes * 60 + selectedSeconds) / 60;
+      if (selectedDurationMin > 0) {
+        timeTakenMin = selectedDurationMin;
+      } else if (timeTakenMin <= 0) {
+        timeTakenMin = 0.01;
+      }
 
       const rules = {
         capRule: lesson.capRule || "Half Mistake",
@@ -262,6 +277,7 @@ export default function TestPage() {
           totalWords: safeResult.totalWords,
           typedWords: safeResult.typedWords,
           mistakes: safeResult.errorUnits,
+          duration: selectedMinutes * 60 + selectedSeconds,
           passed: safeResult.errorPercent <= (lesson?.allowedErrorPercent ?? 5),
           cheatingWarnings: warnings,
           visualHTML: safeResult.visualHTML,
@@ -586,6 +602,76 @@ export default function TestPage() {
                 </div>
               </div>
 
+              {/* TIME SELECTOR (MM:SS) */}
+              <div style={{
+                padding: '20px 24px',
+                background: 'var(--bg-surface-elevated)',
+                borderRadius: '16px',
+                border: '1px solid var(--border-color)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '20px',
+                flexWrap: 'wrap'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <Clock size={20} style={{ color: 'var(--primary)' }} />
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>Select Test Duration</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Max allowed: {Math.floor(maxDurationSecs / 60).toString().padStart(2, '0')}:{(maxDurationSecs % 60).toString().padStart(2, '0')}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max={Math.floor(maxDurationSecs / 60)}
+                    value={selectedMinutes.toString().padStart(2, '0')}
+                    onChange={(e) => setSelectedMinutes(parseInt(e.target.value) || 0)}
+                    className="input-field"
+                    style={{
+                      width: '80px',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      color: 'var(--primary)',
+                      border: '2px solid var(--primary)',
+                      background: 'rgba(56, 189, 248, 0.05)',
+                      fontSize: '1.2rem'
+                    }}
+                  />
+                  <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>:</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={selectedSeconds.toString().padStart(2, '0')}
+                    onChange={(e) => setSelectedSeconds(parseInt(e.target.value) || 0)}
+                    className="input-field"
+                    style={{
+                      width: '80px',
+                      padding: '12px',
+                      borderRadius: '12px',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                      color: 'var(--primary)',
+                      border: '2px solid var(--primary)',
+                      background: 'rgba(56, 189, 248, 0.05)',
+                      fontSize: '1.2rem'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {((selectedMinutes * 60 + selectedSeconds) > maxDurationSecs || (selectedMinutes * 60 + selectedSeconds) <= 0) && (
+                <div style={{ color: 'var(--danger)', padding: '12px', background: 'rgba(244, 63, 94, 0.1)', borderRadius: '8px', border: '1px solid var(--danger)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldAlert size={16} /> 
+                  {(selectedMinutes * 60 + selectedSeconds) <= 0 ? "Duration must be greater than 0." : "Duration cannot exceed the maximum allowed time."}
+                </div>
+              )}
+
               {/* START TEST - BIG HIGHLIGHTED BUTTON */}
               <div style={{ 
                 background: 'rgba(14, 165, 233, 0.04)', 
@@ -599,7 +685,8 @@ export default function TestPage() {
                 </p>
                 <button 
                   className="btn btn-primary" 
-                  onClick={handleStartTest} 
+                  onClick={handleStartTest}
+                  disabled={(selectedMinutes * 60 + selectedSeconds) > maxDurationSecs || (selectedMinutes * 60 + selectedSeconds) <= 0}
                   style={{ 
                     padding: '18px 64px', 
                     fontSize: '1.25rem', 
@@ -607,9 +694,11 @@ export default function TestPage() {
                     letterSpacing: '0.5px',
                     boxShadow: '0 8px 32px rgba(14, 165, 233, 0.35)',
                     transform: 'scale(1)',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    opacity: ((selectedMinutes * 60 + selectedSeconds) > maxDurationSecs || (selectedMinutes * 60 + selectedSeconds) <= 0) ? 0.5 : 1,
+                    cursor: ((selectedMinutes * 60 + selectedSeconds) > maxDurationSecs || (selectedMinutes * 60 + selectedSeconds) <= 0) ? 'not-allowed' : 'pointer'
                   }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.04)'}
+                  onMouseEnter={e => { if ((selectedMinutes * 60 + selectedSeconds) <= maxDurationSecs && (selectedMinutes * 60 + selectedSeconds) > 0) e.currentTarget.style.transform = 'scale(1.04)' }}
                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                 >
                   ▶ Start Test Now

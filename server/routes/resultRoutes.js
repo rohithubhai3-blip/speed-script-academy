@@ -12,6 +12,7 @@ router.post('/submit', protect, async (req, res) => {
     wpm, accuracy, errorPercent,
     fullMistakes, halfMistakes, totalWords, typedWords,
     mistakes,   // backward compat: totalMistakes / errorUnits
+    duration,
     passed,
     cheatingWarnings,
     visualHTML,
@@ -20,6 +21,34 @@ router.post('/submit', protect, async (req, res) => {
   } = req.body;
 
   try {
+    // Validate Duration against admin max duration limit
+    if (duration !== undefined && courseId && lessonId) {
+      const course = await import('../models/Course.js').then(m => m.default.findOne({ id: courseId }));
+      if (course) {
+        let lesson = null;
+        for (const lvl of course.levels || []) {
+          lesson = (lvl.lessons || []).find(l => l.id === lessonId);
+          if (lesson) break;
+        }
+
+        if (lesson) {
+          let maxDuration = 300;
+          if (lesson.timeLimit && typeof lesson.timeLimit === 'string') {
+            const parts = lesson.timeLimit.split(':').map(val => parseInt(val) || 0);
+            if (parts.length === 3) maxDuration = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            else if (parts.length === 2) maxDuration = parts[0] * 60 + parts[1];
+            else if (parts.length === 1) maxDuration = parts[0] * 60;
+          } else if (lesson.timeMinutes) {
+            maxDuration = parseInt(lesson.timeMinutes) * 60;
+          }
+
+          if (duration > maxDuration) {
+            return res.status(400).json({ message: "Selected duration exceeds admin-defined maximum limit." });
+          }
+        }
+      }
+    }
+
     const attempt = await Attempt.create({
       userId:           req.user._id,
       userName:         req.user.name,
@@ -35,6 +64,7 @@ router.post('/submit', protect, async (req, res) => {
       totalWords:       Number(totalWords)   || 0,
       typedWords:       Number(typedWords)   || 0,
       mistakes:         Number(mistakes)     || 0,
+      duration:         Number(duration)     || 0,
       passed:           Boolean(passed),
       cheatingWarnings: Number(cheatingWarnings) || 0,
       visualHTML:       visualHTML || [],
