@@ -461,6 +461,11 @@ export default function TestPage() {
     }
   };
 
+  const maxAllowedWords = lesson?.passage ? lesson.passage.trim().split(/\s+/).filter(w => w.length > 0).length : 0;
+  const currentTypedWords = typedText.trim().split(/\s+/).filter(w => w.length > 0).length;
+  const wordsRemaining = Math.max(0, maxAllowedWords - currentTypedWords);
+
+
   if (loading) {
     return (
       <div style={{ padding: '100px 40px', textAlign: 'center', background: 'var(--bg-surface)', borderRadius: '24px', margin: '40px auto', maxWidth: '600px', border: '1px solid var(--border-color)' }}>
@@ -734,8 +739,16 @@ export default function TestPage() {
               ref={textAreaRef}
               value={typedText}
               onChange={(e) => {
-                setTypedText(e.target.value);
-                if (status === "typing_ready" && e.target.value.length > 0) {
+                const newText = e.target.value;
+                if (maxAllowedWords > 0) {
+                  const newWordsCount = newText.trim().split(/\s+/).filter(w => w.length > 0).length;
+                  if (newWordsCount > maxAllowedWords) {
+                    return; // Prevent typing more than allowed words
+                  }
+                }
+                
+                setTypedText(newText);
+                if (status === "typing_ready" && newText.length > 0) {
                   startTypingTest();
                 }
               }}
@@ -755,6 +768,35 @@ export default function TestPage() {
               autoComplete="off"
               spellCheck="false"
             />
+
+            {/* Live Word Counter */}
+            {maxAllowedWords > 0 && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '12px 24px',
+                background: 'var(--bg-surface-elevated)',
+                borderRadius: '12px',
+                border: '1px solid var(--border-color)',
+                marginTop: '-10px',
+                fontSize: '0.95rem'
+              }}>
+                <div style={{ fontWeight: 'bold' }}>
+                  Typed: <span style={{ color: 'var(--primary)' }}>{currentTypedWords}</span> / {maxAllowedWords}
+                </div>
+                <div style={{
+                  fontWeight: 'bold',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  color: wordsRemaining === 0 ? 'var(--danger)' : wordsRemaining <= 10 ? '#eab308' : 'var(--success)'
+                }}>
+                  {wordsRemaining === 0 && <ShieldAlert size={16} />}
+                  Words Left: {wordsRemaining}
+                </div>
+              </div>
+            )}
 
             {/* End Test button — below the textarea */}
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

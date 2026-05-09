@@ -45,6 +45,15 @@ router.post('/submit', protect, async (req, res) => {
           if (duration > maxDuration) {
             return res.status(400).json({ message: "Selected duration exceeds admin-defined maximum limit." });
           }
+
+          // Validate Max Word Limit based on lesson content
+          if (lesson.passage) {
+            const maxAllowedWords = lesson.passage.trim().split(/\s+/).filter(w => w.length > 0).length;
+            const userTypedWords = typedWords || 0;
+            if (userTypedWords > maxAllowedWords) {
+              return res.status(400).json({ message: `Submission rejected: Typed words (${userTypedWords}) exceed the maximum allowed word limit (${maxAllowedWords}).` });
+            }
+          }
         }
       }
     }
