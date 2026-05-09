@@ -854,6 +854,8 @@ export default function TestPage() {
                 <Trophy size={16}/> Leaderboard
               </button>
             </div>
+          </div>{/* end header */}
+
           {/* ===== MY RESULT VIEW ===== */}
           {resultView === 'result' && (<>
             {/* Download + Share Buttons */}

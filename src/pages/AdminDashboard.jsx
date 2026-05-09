@@ -2674,8 +2674,7 @@ export default function AdminDashboard() {
         );
       })()}
 
-      </div>{/* end main content */}
-    </div>{/* end flex wrapper */}
+      </div>
+    </div>
   );
 }
-
