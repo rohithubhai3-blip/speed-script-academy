@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Check, Clock } from 'lucide-react';
+import { PlayCircle, ShieldAlert, CheckCircle, ArrowRight, Music, Settings, Download, Share2, Check, Clock, Trophy, BarChart2 } from 'lucide-react';
 import { db } from '../data/db';
 import useStore from '../store/useStore';
 import { analyzeTestResult } from '../utils/engine';
@@ -27,6 +27,7 @@ export default function TestPage() {
   const [showLockWarning, setShowLockWarning] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
   const [history, setHistory] = useState([]);
+  const [resultView, setResultView] = useState('result'); // 'result' | 'leaderboard'
   
   const [countdown, setCountdown] = useState(0);
   const [isCopied, setIsCopied] = useState(false);
@@ -339,11 +340,7 @@ export default function TestPage() {
       const sortedHistory = [...withNames].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
       setHistory(sortedHistory);
 
-      const top = [...withNames]
-        .filter(a => a.wpm && !isNaN(a.wpm))
-        .sort((a,b) => b.wpm - a.wpm || b.accuracy - a.accuracy)
-        .slice(0, 5);
-      setLeaderboard(top);
+      setLeaderboard(withNames);
 
     } catch (err) {
       console.error("Analytics Load Failure:", err);
@@ -821,8 +818,8 @@ export default function TestPage() {
 
       {status === "finished" && result && (
         <div ref={resultRef} className="glass-card" style={{ padding: '32px', animation: 'fadeIn 0.5s ease-out' }}>
-          {/* RESULT HEADER */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+          {/* RESULT HEADER + VIEW TOGGLE */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--success)' }}>
               <CheckCircle size={36} />
               <div>
@@ -830,8 +827,37 @@ export default function TestPage() {
                 <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Saved to your profile · {new Date().toLocaleString()}</p>
               </div>
             </div>
+            {/* View Toggle */}
+            <div style={{ display: 'flex', background: 'var(--bg-surface)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '4px', gap: '4px' }}>
+              <button
+                onClick={() => setResultView('result')}
+                style={{
+                  padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '6px',
+                  background: resultView === 'result' ? 'var(--primary)' : 'transparent',
+                  color: resultView === 'result' ? 'white' : 'var(--text-secondary)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <BarChart2 size={16}/> My Result
+              </button>
+              <button
+                onClick={() => setResultView('leaderboard')}
+                style={{
+                  padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '6px',
+                  background: resultView === 'leaderboard' ? 'var(--primary)' : 'transparent',
+                  color: resultView === 'leaderboard' ? 'white' : 'var(--text-secondary)',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Trophy size={16}/> Leaderboard
+              </button>
+            </div>
+          {/* ===== MY RESULT VIEW ===== */}
+          {resultView === 'result' && (<>
             {/* Download + Share Buttons */}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '24px' }}>
               <button
                 onClick={async () => {
                   try {
@@ -862,7 +888,6 @@ export default function TestPage() {
                 {isCopied ? <><Check size={16} /> Copied!</> : <><Share2 size={16} /> Share Result</>}
               </button>
             </div>
-          </div>
 
           {/* PRIMARY METRICS ROW */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '20px' }}>
@@ -871,6 +896,7 @@ export default function TestPage() {
               <p style={{ color: 'var(--primary)', fontSize: '0.7rem', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '1px' }}>⚡ Net WPM</p>
               <h3 style={{ fontSize: '2.8rem', color: 'var(--primary)', fontWeight: 800, margin: 0 }}>{result.wpm}</h3>
             </div>
+
 
             {/* Accuracy */}
             <div style={{ background: parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.04))' : 'linear-gradient(135deg, rgba(244,63,94,0.1), rgba(244,63,94,0.03))', border: `2px solid ${parseFloat(result.errorPercent) <= (lesson.allowedErrorPercent ?? 5) ? 'var(--success)' : 'var(--danger)'}`, padding: '24px 16px', borderRadius: '16px', textAlign: 'center' }}>
@@ -1118,6 +1144,85 @@ export default function TestPage() {
               Go to Dashboard <ArrowRight size={20} />
             </button>
           </div>
+          </>)}
+
+          {/* ===== LEADERBOARD VIEW ===== */}
+          {resultView === 'leaderboard' && (() => {
+            const sortedLb = [...leaderboard].sort((a,b) => parseFloat(b.accuracy) - parseFloat(a.accuracy) || b.wpm - a.wpm || (a.fullMistakes || 0) - (b.fullMistakes || 0));
+            const myRank = sortedLb.findIndex(a => a.userId === user?._id || a.userId === user?.id || a.userName === user?.name) + 1;
+            return (
+              <div style={{ marginTop: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                  <div>
+                    <h3 style={{ fontWeight: 700, margin: '0 0 4px' }}>{lesson?.title} — All Attempts</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                      {sortedLb.length} attempts · Ranked by Accuracy → WPM → Fewest Mistakes
+                      {myRank > 0 && <span style={{ color: 'var(--primary)', fontWeight: 700, marginLeft: '12px' }}>Your rank: #{myRank}</span>}
+                    </p>
+                  </div>
+                  <Trophy size={28} style={{ color: '#f59e0b' }}/>
+                </div>
+
+                {sortedLb.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px', border: '2px dashed var(--border-color)', borderRadius: '16px', color: 'var(--text-muted)' }}>
+                    <Trophy size={40} style={{ marginBottom: '12px', opacity: 0.3 }}/>
+                    <p>No other attempts yet. You're the first! 🎉</p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+                      <thead style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <tr>
+                          <th style={{ padding: '12px 16px' }}>Rank</th>
+                          <th style={{ padding: '12px 16px' }}>Student</th>
+                          <th style={{ padding: '12px 16px' }}>WPM</th>
+                          <th style={{ padding: '12px 16px' }}>Accuracy</th>
+                          <th style={{ padding: '12px 16px' }}>Mistakes</th>
+                          <th style={{ padding: '12px 16px' }}>Duration</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sortedLb.map((a, i) => {
+                          const isMe = a.userId === user?._id || a.userId === user?.id || a.userName === user?.name;
+                          const rankEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                          const rankColors = ['#f59e0b', '#94a3b8', '#b45309'];
+                          return (
+                            <tr key={a._id || i}
+                              style={{
+                                borderBottom: '1px solid var(--border-color)',
+                                background: isMe ? 'rgba(14,165,233,0.07)' : 'transparent',
+                                outline: isMe ? '2px solid rgba(14,165,233,0.25)' : 'none',
+                              }}>
+                              <td style={{ padding: '12px 16px', fontWeight: 800, color: rankColors[i] || 'var(--text-muted)', fontSize: '1rem' }}>{rankEmoji}</td>
+                              <td style={{ padding: '12px 16px', fontWeight: isMe ? 800 : 500, color: isMe ? 'var(--primary)' : 'var(--text-primary)' }}>
+                                {a.userName || 'Student'} {isMe && <span style={{ fontSize: '0.72rem', background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '100px', marginLeft: '4px' }}>You</span>}
+                              </td>
+                              <td style={{ padding: '12px 16px', color: 'var(--primary)', fontWeight: 700 }}>{a.wpm}</td>
+                              <td style={{ padding: '12px 16px' }}>
+                                <span style={{ fontWeight: 700, color: parseFloat(a.accuracy) >= 95 ? 'var(--success)' : parseFloat(a.accuracy) >= 85 ? '#f59e0b' : 'var(--danger)' }}>{a.accuracy}%</span>
+                              </td>
+                              <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
+                                <span style={{ color: 'var(--danger)' }}>F:{a.fullMistakes || 0}</span>{' '}
+                                <span style={{ color: '#f59e0b' }}>H:{a.halfMistakes || 0}</span>
+                              </td>
+                              <td style={{ padding: '12px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                {a.duration ? `${Math.floor(a.duration/60)}:${String(a.duration%60).padStart(2,'0')}` : '—'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                  <button className="btn btn-outline" onClick={handleReset}>Try Again</button>
+                  <button className="btn btn-primary" onClick={() => navigate('/dashboard')}>Dashboard <ArrowRight size={18}/></button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

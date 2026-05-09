@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db } from '../data/db';
 import api from '../services/api';
 import axios from 'axios';
-import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock, Mail, Megaphone, DollarSign } from 'lucide-react';
+import { Users, FileDiff, Server, Plus, List, Settings, Edit3, Eye, Upload, QrCode, CheckCircle2, MessageSquare, Loader2, Trash2, ShieldCheck, X, Key, Lock, PlayCircle, Zap, Activity, BookOpen, Clock, Mail, Megaphone, DollarSign, TrendingUp, Trophy, BarChart2, Calendar, AlertTriangle, UserCheck, UserX, ArrowUpRight, Filter } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import useStore from '../store/useStore';
 
@@ -33,6 +33,19 @@ export default function AdminDashboard() {
   const [paidUsersSearch, setPaidUsersSearch] = useState('');
   const [paidUsersFilter, setPaidUsersFilter] = useState('all'); // all | active | expired
   const [paidUsersCourseFilter, setPaidUsersCourseFilter] = useState('all'); // all | courseId
+
+  // Earnings State
+  const [earningsSearch, setEarningsSearch] = useState('');
+  const [earningsDateFilter, setEarningsDateFilter] = useState('all'); // today | week | month | all
+  const [earningsCourseFilter, setEarningsCourseFilter] = useState('all');
+  const [earningsStatusFilter, setEarningsStatusFilter] = useState('all'); // all | active | expired
+
+  // Admin Leaderboard Selector
+  const [lbSelectedCourseId, setLbSelectedCourseId] = useState('');
+  const [lbSelectedLessonId, setLbSelectedLessonId] = useState('');
+
+  // Sidebar
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Forms states
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user' });
@@ -542,90 +555,225 @@ export default function AdminDashboard() {
   );
 
 
+  const now_dash = new Date();
+  const today_start = new Date(); today_start.setHours(0,0,0,0);
+
+  // Compute sidebar badge counts
+  const pendingCount = pendingRequests.length;
+  const inboxCount = inquiries.length;
+  const expiringCount = users.reduce((acc, u) => {
+    return acc + (u.courseAccess || []).filter(a => a.expiresAt && (new Date(a.expiresAt) - now_dash) / (1000*60*60*24) <= 7 && new Date(a.expiresAt) > now_dash).length;
+  }, 0);
+
+  const sidebarGroups = [
+    { label: 'Main', items: [
+      { id: 'overview', icon: <BarChart2 size={18}/>, label: 'Dashboard' },
+    ]},
+    { label: 'Users', items: [
+      { id: 'users', icon: <Users size={18}/>, label: 'All Users' },
+      { id: 'paid-users', icon: <UserCheck size={18}/>, label: 'Paid Users' },
+      { id: 'enrollments', icon: <BookOpen size={18}/>, label: 'Enrollments' },
+    ]},
+    { label: 'Content', items: [
+      { id: 'courses', icon: <Settings size={18}/>, label: 'Tests & Courses' },
+      { id: 'promos', icon: <Zap size={18}/>, label: 'Promo Codes' },
+    ]},
+    { label: 'Finance', items: [
+      { id: 'earnings', icon: <TrendingUp size={18}/>, label: 'Earnings' },
+      { id: 'payments', icon: <QrCode size={18}/>, label: 'Payment Setup' },
+      { id: 'approvals', icon: <CheckCircle2 size={18}/>, label: 'Approvals', badge: pendingCount },
+    ]},
+    { label: 'Analytics', items: [
+      { id: 'leaderboards', icon: <Trophy size={18}/>, label: 'Leaderboards' },
+    ]},
+    { label: 'Communication', items: [
+      { id: 'inbox', icon: <MessageSquare size={18}/>, label: 'Inbox', badge: inboxCount },
+      { id: 'cms', icon: <Edit3 size={18}/>, label: 'Site Content' },
+    ]},
+  ];
+
   return (
-    <div>
-      <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Admin Dashboard</h1>
-        
-        {/* TABS */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '24px', flexWrap: 'wrap' }}>
-          <button className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('overview')}>
-            <List size={18} /> Overview
-          </button>
-          <button className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('users')}>
-            <Users size={18} /> Manage Users
-          </button>
-          <button className={`btn ${activeTab === 'courses' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('courses')}>
-            <Settings size={18} /> Course & Test Builder
-          </button>
-           <button className={`btn ${activeTab === 'promos' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('promos')}>
-            <Settings size={18} /> Promo Codes
-          </button>
-          <button className={`btn ${activeTab === 'payments' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('payments')}>
-            <QrCode size={18} /> Payment Settings
-          </button>
-          <button className={`btn ${activeTab === 'approvals' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('approvals')}>
-            <CheckCircle2 size={18} /> Manual Approvals {pendingRequests.length > 0 && <span style={{ background: 'var(--danger)', color: 'white', padding: '2px 6px', borderRadius: '50%', fontSize: '0.7rem' }}>{pendingRequests.length}</span>}
-          </button>
-          <button className={`btn ${activeTab === 'cms' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('cms')}>
-            <Edit3 size={18} /> Site Content (CMS)
-          </button>
-          <button className={`btn ${activeTab === 'inbox' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('inbox')}>
-            <MessageSquare size={18} /> Inbox {inquiries.length > 0 && <span style={{ background: 'var(--primary)', color: 'white', padding: '2px 6px', borderRadius: '50%', fontSize: '0.7rem' }}>{inquiries.length}</span>}
-          </button>
-          <button className={`btn ${activeTab === 'enrollments' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('enrollments')}>
-            <BookOpen size={18} /> Enrollments
-          </button>
-          <button className={`btn ${activeTab === 'paid-users' ? 'btn-primary' : 'btn-outline'}`} onClick={() => setActiveTab('paid-users')}>
-            <DollarSign size={18} /> Paid Users
+    <div style={{ display: 'flex', gap: '0', alignItems: 'flex-start', minHeight: 'calc(100vh - 180px)' }}>
+
+      {/* ========== SIDEBAR ========== */}
+      <style>{`
+        .admin-sidebar { width: 220px; flex-shrink: 0; transition: width 0.25s ease; }
+        .admin-sidebar.collapsed { width: 56px; }
+        .admin-sidebar.collapsed .sidebar-label { display: none; }
+        .admin-sidebar.collapsed .sidebar-group-label { display: none; }
+        .admin-sidebar.collapsed .sidebar-nav-item { justify-content: center; padding: 10px; }
+        @media (max-width: 768px) {
+          .admin-layout { flex-direction: column !important; }
+          .admin-sidebar { width: 100% !important; }
+          .admin-sidebar .sidebar-group-label { display: none !important; }
+          .admin-sidebar nav { display: flex; flex-wrap: wrap; gap: 4px; flex-direction: row !important; padding: 8px !important; }
+          .admin-sidebar .sidebar-nav-item { padding: 8px 10px !important; flex: 0 0 auto; }
+          .admin-sidebar .sidebar-label { display: block !important; font-size: 0.78rem !important; }
+        }
+      `}</style>
+
+      <aside
+        className={`admin-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
+        style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '20px',
+          padding: '16px 12px',
+          marginRight: '24px',
+          position: 'sticky',
+          top: '100px',
+          maxHeight: 'calc(100vh - 140px)',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}
+      >
+        {/* Sidebar Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--border-color)' }}>
+          {!sidebarCollapsed && (
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--primary)' }}>Admin Panel</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Manage everything</div>
+            </div>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(p => !p)}
+            style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex' }}
+            title={sidebarCollapsed ? 'Expand' : 'Collapse'}
+          >
+            <List size={18}/>
           </button>
         </div>
-      </div>
+
+        {/* Nav Groups */}
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {sidebarGroups.map(group => (
+            <div key={group.label} style={{ marginBottom: '8px' }}>
+              <div className="sidebar-group-label" style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.8px', padding: '4px 8px', marginBottom: '2px' }}>
+                {group.label}
+              </div>
+              {group.items.map(item => (
+                <button
+                  key={item.id}
+                  className="sidebar-nav-item"
+                  onClick={() => setActiveTab(item.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    width: '100%', padding: '9px 12px', borderRadius: '10px',
+                    border: 'none', cursor: 'pointer', textAlign: 'left',
+                    fontSize: '0.875rem', fontWeight: activeTab === item.id ? 700 : 500,
+                    background: activeTab === item.id ? 'var(--primary)' : 'transparent',
+                    color: activeTab === item.id ? 'white' : 'var(--text-secondary)',
+                    transition: 'all 0.15s',
+                    position: 'relative'
+                  }}
+                  onMouseEnter={e => { if (activeTab !== item.id) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseLeave={e => { if (activeTab !== item.id) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <span style={{ flexShrink: 0 }}>{item.icon}</span>
+                  <span className="sidebar-label" style={{ whiteSpace: 'nowrap', flex: 1 }}>{item.label}</span>
+                  {item.badge > 0 && (
+                    <span style={{
+                      background: activeTab === item.id ? 'rgba(255,255,255,0.3)' : 'var(--danger)',
+                      color: 'white', fontSize: '0.62rem', fontWeight: 800,
+                      padding: '1px 5px', borderRadius: '100px', minWidth: '18px', textAlign: 'center'
+                    }}>{item.badge}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+      </aside>
+
+      {/* ========== MAIN CONTENT ========== */}
+      <div className="admin-layout" style={{ flex: 1, minWidth: 0 }}>
 
       {/* OVERVIEW TAB */}
-      {activeTab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-          <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ background: 'rgba(14, 165, 233, 0.08)', padding: '16px', borderRadius: 'var(--radius-full)' }}>
-              <Users size={28} style={{ color: 'var(--primary)' }} />
-            </div>
-            <div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Total Users</p>
-              <h3 style={{ fontSize: '2rem' }}>{users.length}</h3>
-            </div>
-          </div>
-          
-          <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ background: 'rgba(45, 212, 191, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--accent)' }}>
-              <FileDiff size={28} />
-            </div>
-            <div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Total Attempts</p>
-              <h3 style={{ fontSize: '2rem' }}>{attempts.length}</h3>
-            </div>
-          </div>
-          
-          <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }} onClick={() => setActiveTab('enrollments')}>
-            <div style={{ background: 'rgba(56, 189, 248, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--primary)' }}>
-              <BookOpen size={28} />
-            </div>
-            <div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>Total Enrollments</p>
-              <h3 style={{ fontSize: '2rem' }}>{users.reduce((acc, u) => acc + (u.courseAccess?.length || 0), 0)}</h3>
-            </div>
-          </div>
+      {activeTab === 'overview' && (() => {
+        const activePaidUsers = users.filter(u => (u.courseAccess || []).some(a => !a.expiresAt || new Date(a.expiresAt) > now_dash)).length;
+        const freeUsers = users.filter(u => (u.courseAccess || []).length === 0 && u.role !== 'admin').length;
+        const todayRegs = users.filter(u => u.createdAt && new Date(u.createdAt) >= today_start).length;
+        const totalRevenue = users.reduce((sum, u) => {
+          return sum + (u.courseAccess || []).reduce((s, a) => {
+            const c = courses.find(c => c.id === a.courseId);
+            return s + (c?.price || 0);
+          }, 0);
+        }, 0);
 
-          <div className="glass-card" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', cursor: 'pointer' }} onClick={() => setActiveTab('inbox')}>
-            <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '16px', borderRadius: 'var(--radius-full)', color: 'var(--secondary)' }}>
-              <MessageSquare size={28} />
+        const cards = [
+          { label: 'Total Users', value: users.length, icon: <Users size={24}/>, color: '14, 165, 233', tab: 'users' },
+          { label: 'Active Paid Users', value: activePaidUsers, icon: <UserCheck size={24}/>, color: '16, 185, 129', tab: 'paid-users' },
+          { label: 'Free Users', value: freeUsers, icon: <UserX size={24}/>, color: '99, 102, 241', tab: 'users' },
+          { label: 'Total Attempts', value: attempts.length, icon: <FileDiff size={24}/>, color: '45, 212, 191', tab: null },
+          { label: 'Total Courses', value: courses.length, icon: <BookOpen size={24}/>, color: '249, 115, 22', tab: 'courses' },
+          { label: 'Est. Revenue (₹)', value: `₹${totalRevenue.toLocaleString()}`, icon: <TrendingUp size={24}/>, color: '234, 179, 8', tab: 'earnings' },
+          { label: 'Expiring Soon', value: expiringCount, icon: <AlertTriangle size={24}/>, color: '239, 68, 68', tab: 'paid-users' },
+          { label: "Today's Registrations", value: todayRegs, icon: <Calendar size={24}/>, color: '168, 85, 247', tab: null },
+        ];
+
+        return (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '4px' }}>Dashboard Overview</h1>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Welcome back, Admin 👋 — here's what's happening today.</p>
             </div>
-            <div>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>New Inquiries</p>
-              <h3 style={{ fontSize: '2rem' }}>{inquiries.length}</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
+              {cards.map((card, i) => (
+                <div
+                  key={card.label}
+                  className="glass-card"
+                  onClick={() => card.tab && setActiveTab(card.tab)}
+                  style={{
+                    padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px',
+                    cursor: card.tab ? 'pointer' : 'default',
+                    transition: 'transform 0.15s',
+                    borderLeft: `3px solid rgba(${card.color}, 0.6)`
+                  }}
+                  onMouseEnter={e => { if (card.tab) e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <div style={{ background: `rgba(${card.color}, 0.1)`, padding: '12px', borderRadius: '12px', color: `rgb(${card.color})`, flexShrink: 0 }}>
+                    {card.icon}
+                  </div>
+                  <div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '4px' }}>{card.label}</p>
+                    <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: `rgb(${card.color})` }}>{card.value}</h3>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick Actions */}
+            <div className="glass-panel" style={{ padding: '24px' }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: '16px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700 }}>Quick Actions</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                {[
+                  { label: 'Add Test', tab: 'courses', color: 'var(--primary)' },
+                  { label: 'Approve Requests', tab: 'approvals', color: '#f59e0b', badge: pendingCount },
+                  { label: 'View Earnings', tab: 'earnings', color: '#22c55e' },
+                  { label: 'Manage Users', tab: 'users', color: '#818cf8' },
+                  { label: 'View Leaderboard', tab: 'leaderboards', color: '#f97316' },
+                  { label: 'Check Inbox', tab: 'inbox', color: '#ec4899', badge: inboxCount },
+                ].map(a => (
+                  <button
+                    key={a.label}
+                    onClick={() => setActiveTab(a.tab)}
+                    style={{
+                      padding: '10px 20px', borderRadius: '100px', border: `1px solid ${a.color}40`,
+                      background: `${a.color}10`, color: a.color, cursor: 'pointer',
+                      fontWeight: 600, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px'
+                    }}
+                  >
+                    {a.label}
+                    {a.badge > 0 && <span style={{ background: a.color, color: 'white', fontSize: '0.65rem', padding: '1px 6px', borderRadius: '100px', fontWeight: 800 }}>{a.badge}</span>}
+                    <ArrowUpRight size={14}/>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* INBOX TAB */}
       {activeTab === 'inbox' && (
@@ -2267,6 +2415,267 @@ export default function AdminDashboard() {
             </div>
          </div>
       )}
-    </div>
+
+      {/* ==================== EARNINGS TAB ==================== */}
+      {activeTab === 'earnings' && (() => {
+        const earningNow = new Date();
+        const earningToday = new Date(); earningToday.setHours(0,0,0,0);
+        const earningWeekAgo = new Date(); earningWeekAgo.setDate(earningWeekAgo.getDate() - 7);
+        const earningMonthAgo = new Date(); earningMonthAgo.setMonth(earningMonthAgo.getMonth() - 1);
+
+        // Build payment records from courseAccess grants
+        const allRecords = [];
+        users.forEach(user => {
+          (user.courseAccess || []).forEach(a => {
+            const course = courses.find(c => c.id === a.courseId);
+            allRecords.push({
+              userName: user.name,
+              email: user.email,
+              courseId: a.courseId,
+              courseName: course?.title || a.courseId,
+              amount: course?.price || 0,
+              method: 'Admin Grant / Manual Approval',
+              date: a.createdAt || user.createdAt || new Date().toISOString(),
+              expiresAt: a.expiresAt,
+              status: !a.expiresAt || new Date(a.expiresAt) > earningNow ? 'Active' : 'Expired',
+            });
+          });
+        });
+
+        // Revenue summaries
+        const todayRev = allRecords.filter(r => new Date(r.date) >= earningToday).reduce((s,r) => s+r.amount, 0);
+        const weekRev = allRecords.filter(r => new Date(r.date) >= earningWeekAgo).reduce((s,r) => s+r.amount, 0);
+        const monthRev = allRecords.filter(r => new Date(r.date) >= earningMonthAgo).reduce((s,r) => s+r.amount, 0);
+        const totalRev = allRecords.reduce((s,r) => s+r.amount, 0);
+
+        // Filter records
+        const filtered = allRecords.filter(r => {
+          const matchSearch = !earningsSearch || r.userName?.toLowerCase().includes(earningsSearch.toLowerCase()) || r.email?.toLowerCase().includes(earningsSearch.toLowerCase());
+          const matchCourse = earningsCourseFilter === 'all' || r.courseId === earningsCourseFilter;
+          const matchStatus = earningsStatusFilter === 'all' || r.status.toLowerCase() === earningsStatusFilter;
+          const d = new Date(r.date);
+          const matchDate = earningsDateFilter === 'all' ? true
+            : earningsDateFilter === 'today' ? d >= earningToday
+            : earningsDateFilter === 'week' ? d >= earningWeekAgo
+            : d >= earningMonthAgo;
+          return matchSearch && matchCourse && matchStatus && matchDate;
+        });
+
+        const summaryCards = [
+          { label: "Today's Revenue", value: `₹${todayRev.toLocaleString()}`, color: '14, 165, 233' },
+          { label: 'This Week', value: `₹${weekRev.toLocaleString()}`, color: '16, 185, 129' },
+          { label: 'This Month', value: `₹${monthRev.toLocaleString()}`, color: '249, 115, 22' },
+          { label: 'All-Time Revenue', value: `₹${totalRev.toLocaleString()}`, color: '234, 179, 8' },
+        ];
+
+        return (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '4px' }}>Earnings & Revenue</h2>
+              <p style={{ color: 'var(--text-secondary)' }}>Track all course access grants and estimated revenue.</p>
+            </div>
+
+            {/* Revenue Summary Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+              {summaryCards.map(c => (
+                <div key={c.label} className="glass-card" style={{ padding: '20px', borderLeft: `3px solid rgba(${c.color}, 0.6)` }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>{c.label}</p>
+                  <h3 style={{ fontSize: '1.8rem', fontWeight: 800, color: `rgb(${c.color})` }}>{c.value}</h3>
+                </div>
+              ))}
+            </div>
+
+            {/* Filters */}
+            <div className="glass-panel" style={{ padding: '24px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input type="text" placeholder="Search by name or email..." className="input-field"
+                  value={earningsSearch} onChange={e => setEarningsSearch(e.target.value)}
+                  style={{ flex: '1 1 200px', maxWidth: '320px' }} />
+                <select className="input-field" value={earningsCourseFilter} onChange={e => setEarningsCourseFilter(e.target.value)} style={{ flex: '0 0 200px' }}>
+                  <option value="all">All Courses</option>
+                  {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
+                <select className="input-field" value={earningsDateFilter} onChange={e => setEarningsDateFilter(e.target.value)} style={{ flex: '0 0 160px' }}>
+                  <option value="all">All Time</option>
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+                <select className="input-field" value={earningsStatusFilter} onChange={e => setEarningsStatusFilter(e.target.value)} style={{ flex: '0 0 140px' }}>
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Payment Records Table */}
+            <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
+                  <thead style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)', fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <tr>
+                      <th style={{ padding: '16px' }}>User</th>
+                      <th style={{ padding: '16px' }}>Course / Plan</th>
+                      <th style={{ padding: '16px' }}>Amount</th>
+                      <th style={{ padding: '16px' }}>Method</th>
+                      <th style={{ padding: '16px' }}>Grant Date</th>
+                      <th style={{ padding: '16px' }}>Expiry</th>
+                      <th style={{ padding: '16px' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr><td colSpan="7" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>No payment records found matching your filters.</td></tr>
+                    ) : filtered.map((r, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--border-color)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <td style={{ padding: '14px 16px' }}>
+                          <div style={{ fontWeight: 600 }}>{r.userName}</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{r.email}</div>
+                        </td>
+                        <td style={{ padding: '14px 16px', color: 'var(--primary)', fontWeight: 500 }}>{r.courseName}</td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ fontWeight: 800, fontSize: '1.1rem', color: r.amount > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
+                            {r.amount > 0 ? `₹${r.amount}` : 'Free'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 16px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{r.method}</td>
+                        <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          {r.date ? new Date(r.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+                        <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          {r.expiresAt ? new Date(r.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '♾️ Lifetime'}
+                        </td>
+                        <td style={{ padding: '14px 16px' }}>
+                          <span style={{ fontSize: '0.72rem', padding: '4px 10px', borderRadius: '100px', fontWeight: 700,
+                            background: r.status === 'Active' ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                            color: r.status === 'Active' ? '#22c55e' : '#f43f5e',
+                            border: `1px solid ${r.status === 'Active' ? '#22c55e' : '#f43f5e'}50`
+                          }}>{r.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ==================== LEADERBOARDS TAB ==================== */}
+      {activeTab === 'leaderboards' && (() => {
+        const selectedCourse = courses.find(c => c.id === lbSelectedCourseId);
+        const allLessons = selectedCourse
+          ? selectedCourse.levels.flatMap(l => l.lessons.map(ls => ({ ...ls, levelTitle: l.title })))
+          : [];
+        const lbAttempts = lbSelectedLessonId
+          ? attempts.filter(a => a.lessonId === lbSelectedLessonId)
+              .sort((a,b) => b.accuracy - a.accuracy || b.wpm - a.wpm || a.fullMistakes - b.fullMistakes)
+          : [];
+
+        return (
+          <div>
+            <div style={{ marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '4px' }}>Test Leaderboards</h2>
+              <p style={{ color: 'var(--text-secondary)' }}>View per-test rankings — select a course and test below.</p>
+            </div>
+
+            <div className="glass-panel" style={{ padding: '24px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ flex: '1 1 250px' }}>
+                  <label className="input-label">Select Course</label>
+                  <select className="input-field" value={lbSelectedCourseId} onChange={e => { setLbSelectedCourseId(e.target.value); setLbSelectedLessonId(''); }}>
+                    <option value="">-- Choose a course --</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                  </select>
+                </div>
+                {lbSelectedCourseId && (
+                  <div style={{ flex: '1 1 250px' }}>
+                    <label className="input-label">Select Test</label>
+                    <select className="input-field" value={lbSelectedLessonId} onChange={e => setLbSelectedLessonId(e.target.value)}>
+                      <option value="">-- Choose a test --</option>
+                      {allLessons.map(ls => <option key={ls.id} value={ls.id}>[{ls.levelTitle}] {ls.title}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {lbSelectedLessonId ? (
+              <div className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px', background: 'var(--bg-surface-elevated)', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ fontWeight: 700, margin: 0 }}>{allLessons.find(l => l.id === lbSelectedLessonId)?.title || 'Test'} — Leaderboard</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '2px 0 0' }}>{lbAttempts.length} total attempts · Ranked by Accuracy → WPM → Fewest Mistakes</p>
+                  </div>
+                  <Trophy size={24} style={{ color: '#f59e0b' }}/>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '750px' }}>
+                    <thead style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-secondary)', fontSize: '0.82rem', textTransform: 'uppercase' }}>
+                      <tr>
+                        <th style={{ padding: '14px 16px' }}>Rank</th>
+                        <th style={{ padding: '14px 16px' }}>Student</th>
+                        <th style={{ padding: '14px 16px' }}>WPM</th>
+                        <th style={{ padding: '14px 16px' }}>Accuracy</th>
+                        <th style={{ padding: '14px 16px' }}>Mistakes</th>
+                        <th style={{ padding: '14px 16px' }}>Duration</th>
+                        <th style={{ padding: '14px 16px' }}>Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lbAttempts.length === 0 ? (
+                        <tr><td colSpan="7" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>No attempts for this test yet.</td></tr>
+                      ) : lbAttempts.map((a, i) => {
+                        const rankColors = ['#f59e0b', '#94a3b8', '#b45309'];
+                        const rankEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+                        return (
+                          <tr key={a._id || i} style={{ borderBottom: '1px solid var(--border-color)' }}
+                            onMouseEnter={e => e.currentTarget.style.background = i < 3 ? `rgba(${i===0?'234,179,8':i===1?'148,163,184':'180,83,9'},0.05)` : 'rgba(255,255,255,0.02)'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                            <td style={{ padding: '14px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 800, color: rankColors[i] || 'var(--text-secondary)', fontSize: '1.1rem' }}>
+                                {rankEmoji || `#${i+1}`}
+                              </div>
+                            </td>
+                            <td style={{ padding: '14px 16px', fontWeight: 600 }}>{a.userName || 'Student'}</td>
+                            <td style={{ padding: '14px 16px', color: 'var(--primary)', fontWeight: 700 }}>{a.wpm}</td>
+                            <td style={{ padding: '14px 16px' }}>
+                              <span style={{ color: parseFloat(a.accuracy) >= 95 ? 'var(--success)' : parseFloat(a.accuracy) >= 85 ? '#f59e0b' : 'var(--danger)', fontWeight: 700 }}>{a.accuracy}%</span>
+                            </td>
+                            <td style={{ padding: '14px 16px', fontSize: '0.85rem' }}>
+                              <span style={{ color: 'var(--danger)' }}>F:{a.fullMistakes || 0}</span>
+                              {' '}
+                              <span style={{ color: '#f59e0b' }}>H:{a.halfMistakes || 0}</span>
+                            </td>
+                            <td style={{ padding: '14px 16px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                              {a.duration ? `${Math.floor(a.duration/60)}m ${a.duration%60}s` : '—'}
+                            </td>
+                            <td style={{ padding: '14px 16px', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                              {a.timestamp ? new Date(a.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '80px 40px', border: '2px dashed var(--border-color)', borderRadius: '20px', color: 'var(--text-muted)' }}>
+                <Trophy size={48} style={{ marginBottom: '16px', opacity: 0.3 }} />
+                <p style={{ fontSize: '1.1rem' }}>Select a course and test above to view its leaderboard.</p>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      </div>{/* end main content */}
+    </div>{/* end flex wrapper */}
   );
 }
+
