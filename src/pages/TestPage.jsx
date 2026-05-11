@@ -218,12 +218,13 @@ export default function TestPage() {
       const timeTakenMs = startTime ? (Date.now() - startTime) : 1000;
       let timeTakenMin = timeTakenMs / 60000;
       
+      // Use actual elapsed time for WPM — NOT the selected max duration.
+      // Cap at selected duration so WPM is not inflated if test ended early due to a bug.
       const selectedDurationMin = (selectedMinutes * 60 + selectedSeconds) / 60;
-      if (selectedDurationMin > 0) {
-        timeTakenMin = selectedDurationMin;
-      } else if (timeTakenMin <= 0) {
-        timeTakenMin = 0.01;
+      if (selectedDurationMin > 0 && timeTakenMin > selectedDurationMin) {
+        timeTakenMin = selectedDurationMin; // clamp: can't take longer than allowed
       }
+      if (timeTakenMin <= 0) timeTakenMin = 0.01;
 
       const rules = {
         capRule: lesson.capRule || "Half Mistake",

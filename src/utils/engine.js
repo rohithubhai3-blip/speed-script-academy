@@ -371,11 +371,15 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
 
   const accuracy = Math.max(0, 100 - errorPercent);
 
-  // WPM: characters / 5 / minutes (standard gross WPM)
-  const typedChars = typedText.replace(/\s+/g, ' ').trim().length;
-  const grossWpm = timeTakenMinutes > 0 ? (typedChars / 5) / timeTakenMinutes : 0;
-  // Net WPM adjusted for errors
-  const netWpm = Math.max(0, Math.round(grossWpm - (errorUnits / Math.max(timeTakenMinutes, 1))));
+  // -------------------------------------------------------
+  // NET WPM — SSC Stenography formula:
+  //   Gross WPM = Total Words Typed / Time (minutes)
+  //   Net WPM   = (Typed Words - Full Mistakes - Half Mistakes × 0.5) / Time
+  //
+  // We floor at 0 — no negative WPM.
+  // -------------------------------------------------------
+  const grossWpm = timeTakenMinutes > 0 ? totalTypedWords / timeTakenMinutes : 0;
+  const netWpm   = Math.max(0, Math.round((totalTypedWords - errorUnits) / Math.max(timeTakenMinutes, 1)));
 
   return {
     totalWords:   totalPassageWords,
