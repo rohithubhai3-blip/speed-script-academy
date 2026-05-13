@@ -964,7 +964,6 @@ export default function AdminDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                   <tr>
-                    <th style={{ padding: '16px' }}>User ID</th>
                     <th style={{ padding: '16px' }}>Student</th>
                     <th style={{ padding: '16px' }}>Course</th>
                     <th style={{ padding: '16px' }}>Enrolled On</th>
@@ -975,7 +974,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {filtered.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <td colSpan="5" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
                         No {enrollmentType} enrollments found matching your search.
                       </td>
                     </tr>
@@ -987,11 +986,6 @@ export default function AdminDashboard() {
 
                       return (
                         <tr key={`${enr.userId}-${enr.courseId}-${idx}`} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <td style={{ padding: '16px' }}>
-                            <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>
-                              {enr.uniqueId || '—'}
-                            </span>
-                          </td>
                           <td style={{ padding: '16px' }}>
                             <div style={{ fontWeight: 600 }}>{enr.studentName}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{enr.studentEmail}</div>
@@ -1040,7 +1034,6 @@ export default function AdminDashboard() {
             user.courseAccess.forEach(a => {
               allPaid.push({
                 userId: user._id || user.id,
-                uniqueId: user.uniqueId,
                 studentName: user.name,
                 studentEmail: user.email,
                 courseId: a.courseId,
@@ -1058,7 +1051,6 @@ export default function AdminDashboard() {
               if (!allPaid.find(p => p.userId === (user._id || user.id) && p.courseId === courseId)) {
                 allPaid.push({
                   userId: user._id || user.id,
-                  uniqueId: user.uniqueId,
                   studentName: user.name,
                   studentEmail: user.email,
                   courseId: courseId,
@@ -1080,8 +1072,7 @@ export default function AdminDashboard() {
           
           const matchesSearch = 
             p.studentName?.toLowerCase().includes(searchLower) ||
-            p.studentEmail?.toLowerCase().includes(searchLower) ||
-            p.uniqueId?.includes(searchLower);
+            p.studentEmail?.toLowerCase().includes(searchLower);
             
           const isExpired = p.expiresAt && new Date(p.expiresAt) <= now;
           const matchesType = paidUsersFilter === 'all' 
@@ -1151,7 +1142,7 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
-                placeholder="Search by student name, email, or ID..." 
+                placeholder="Search by student name or email..." 
                 className="input-field"
                 value={paidUsersSearch}
                 onChange={e => setPaidUsersSearch(e.target.value)}
@@ -1175,7 +1166,6 @@ export default function AdminDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '900px' }}>
                 <thead style={{ background: 'var(--bg-surface-elevated)', color: 'var(--text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase' }}>
                   <tr>
-                    <th style={{ padding: '16px' }}>User ID</th>
                     <th style={{ padding: '16px' }}>Student</th>
                     <th style={{ padding: '16px' }}>Active Plan</th>
                     <th style={{ padding: '16px' }}>Start Date</th>
@@ -1188,7 +1178,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {filteredPaid.length === 0 ? (
                     <tr>
-                      <td colSpan="8" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <td colSpan="7" style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>
                         No paid users found matching your filters.
                       </td>
                     </tr>
@@ -1210,11 +1200,6 @@ export default function AdminDashboard() {
 
                       return (
                         <tr key={`${p.userId}-${p.courseId}-${idx}`} style={{ borderBottom: '1px solid var(--border-color)', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                          <td style={{ padding: '16px' }}>
-                            <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>
-                              {p.uniqueId || '—'}
-                            </span>
-                          </td>
                           <td style={{ padding: '16px' }}>
                             <div style={{ fontWeight: 600 }}>{p.studentName}</div>
                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.studentEmail}</div>
@@ -1303,8 +1288,7 @@ export default function AdminDashboard() {
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '700px' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-surface-elevated)', fontSize: '0.82rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    <th style={{ padding: '12px 16px', borderRadius: '8px 0 0 8px' }}>User ID</th>
-                    <th style={{ padding: '12px 16px' }}>Name / Role</th>
+                    <th style={{ padding: '12px 16px', borderRadius: '8px 0 0 8px' }}>Name / Role</th>
                     <th style={{ padding: '12px 16px' }}>Email</th>
                     <th style={{ padding: '12px 16px' }}>Course Access</th>
                     <th style={{ padding: '12px 16px' }}>Last Login</th>
@@ -1314,8 +1298,7 @@ export default function AdminDashboard() {
                 <tbody>
                   {users.filter(u => 
                     u.name?.toLowerCase().includes(usersSearch.toLowerCase()) || 
-                    u.email?.toLowerCase().includes(usersSearch.toLowerCase()) ||
-                    u.uniqueId?.includes(usersSearch)
+                    u.email?.toLowerCase().includes(usersSearch.toLowerCase())
                   ).map(u => {
                     const isAdmin = u.role === 'admin';
                     // Unified access list
@@ -1328,11 +1311,6 @@ export default function AdminDashboard() {
                          onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-surface-elevated)'}
                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
 
-                        <td style={{ padding: '14px 16px' }}>
-                          <span style={{ fontFamily: 'monospace', background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>
-                            {u.uniqueId || '—'}
-                          </span>
-                        </td>
                         {/* Name + Badge */}
                         <td style={{ padding: '14px 16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

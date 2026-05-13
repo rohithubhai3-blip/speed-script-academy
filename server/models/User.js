@@ -7,14 +7,12 @@ const courseAccessSchema = new mongoose.Schema({
 }, { _id: false });
 
 const userSchema = new mongoose.Schema({
-  uniqueId: { type: String, unique: true, sparse: true }, // Added sparse: true in case of nulls during migration, though we will generate them
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   purchasedCourses: [{ type: String }], // Legacy field - kept for backward compatibility
   courseAccess: [courseAccessSchema],   // New field: with expiry support
-  lastUsernameChange: { type: Date, default: null },
   lastLogin: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now }
 });

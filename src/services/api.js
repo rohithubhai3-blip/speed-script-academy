@@ -88,11 +88,6 @@ export const db = {
     return res.data;
   },
 
-  async changeName(newName) {
-    const res = await api.put('/auth/change-name', { newName }, { headers: getAuthHeader() });
-    return res.data;
-  },
-
   // --- COURSES (CACHED) ---
   async getCourses() {
     const cacheKey = 'courses';

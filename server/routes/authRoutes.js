@@ -2,22 +2,9 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
-import Attempt from '../models/Attempt.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
-
-// Helper to generate a 9-digit unique ID
-const generateUniqueId = async () => {
-  let uniqueId;
-  let isUnique = false;
-  while (!isUnique) {
-    uniqueId = Math.floor(100000000 + Math.random() * 900000000).toString();
-    const existing = await User.findOne({ uniqueId });
-    if (!existing) isUnique = true;
-  }
-  return uniqueId;
-};
 
 // Generate JWT
 const generateToken = (id) => {
@@ -42,11 +29,8 @@ router.post('/register', async (req, res) => {
       role = 'admin';
     }
 
-    const uniqueId = await generateUniqueId();
-
-    console.log(`[AUTH] Creating user: ${email}, Role: ${role}, ID: ${uniqueId}`);
+    console.log(`[AUTH] Creating user: ${email}, Role: ${role}`);
     const user = await User.create({
-      uniqueId,
       name,
       email,
       password,
@@ -57,12 +41,10 @@ router.post('/register', async (req, res) => {
     if (user) {
       res.status(201).json({
         _id: user._id,
-        uniqueId: user.uniqueId,
         name: user.name,
         email: user.email,
         role: user.role,
         purchasedCourses: user.purchasedCourses || [],
-        lastUsernameChange: user.lastUsernameChange,
         token: generateToken(user._id)
       });
     } else {
@@ -89,13 +71,11 @@ router.post('/login', async (req, res) => {
       await user.save();
       res.json({
         _id: user._id,
-        uniqueId: user.uniqueId,
         name: user.name,
         email: user.email,
         role: user.role,
         purchasedCourses: user.purchasedCourses || [],
         courseAccess: user.courseAccess || [],
-        lastUsernameChange: user.lastUsernameChange,
         lastLogin: user.lastLogin,
         token: generateToken(user._id)
       });
@@ -125,8 +105,7 @@ router.post('/admin/create-user', protect, adminOnly, async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-    const uniqueId = await generateUniqueId();
-    const user = await User.create({ uniqueId, name, email, password, role });
+    const user = await User.create({ name, email, password, role });
     res.status(201).json(user);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -198,29 +177,14 @@ router.get('/me', protect, async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Lazy migration: if user has no uniqueId (legacy user), generate one now
-    if (!user.uniqueId) {
-      let isUnique = false;
-      let newId;
-      while (!isUnique) {
-        newId = Math.floor(100000000 + Math.random() * 900000000).toString();
-        const existing = await User.findOne({ uniqueId: newId });
-        if (!existing) isUnique = true;
-      }
-      user.uniqueId = newId;
-      await user.save();
-    }
-
     // Return fresh data minus password
     res.json({
       _id: user._id,
-      uniqueId: user.uniqueId,
       name: user.name,
       email: user.email,
       role: user.role,
       purchasedCourses: user.purchasedCourses || [],
       courseAccess: user.courseAccess || [],
-      lastUsernameChange: user.lastUsernameChange,
       lastLogin: user.lastLogin,
     });
   } catch (error) {
@@ -238,13 +202,11 @@ router.post('/impersonate/:id', protect, adminOnly, async (req, res) => {
 
     res.json({
       _id: user._id,
-      uniqueId: user.uniqueId,
       name: user.name,
       email: user.email,
       role: user.role,
       purchasedCourses: user.purchasedCourses || [],
       courseAccess: user.courseAccess || [],
-      lastUsernameChange: user.lastUsernameChange,
       lastLogin: user.lastLogin,
       token: generateToken(user._id)
     });
@@ -267,53 +229,6 @@ router.put('/change-password', protect, async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password changed successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// @route   PUT /api/auth/change-name
-router.put('/change-name', protect, async (req, res) => {
-  const { newName } = req.body;
-  try {
-    if (!newName || newName.trim().length < 3 || newName.trim().length > 30) {
-      return res.status(400).json({ message: 'Name must be between 3 and 30 characters' });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    // Cooldown check (7 days)
-    if (user.lastUsernameChange) {
-      const daysSinceChange = (Date.now() - new Date(user.lastUsernameChange).getTime()) / (1000 * 60 * 60 * 24);
-      if (daysSinceChange < 7) {
-        return res.status(400).json({ 
-          message: `You can only change your name once every 7 days. Please wait ${Math.ceil(7 - daysSinceChange)} more days.` 
-        });
-      }
-    }
-
-    const oldName = user.name;
-    user.name = newName.trim();
-    user.lastUsernameChange = new Date();
-    await user.save();
-
-    // Cascading update: Update the userName in all Attempts made by this user
-    try {
-      await Attempt.updateMany(
-        { userId: user._id },
-        { $set: { userName: user.name } }
-      );
-    } catch (attemptUpdateErr) {
-      console.error(`Failed to cascade name change to attempts for user ${user._id}:`, attemptUpdateErr);
-      // We still return success for the user update, as the name was changed successfully
-    }
-
-    res.json({ 
-      message: 'Name changed successfully',
-      name: user.name,
-      lastUsernameChange: user.lastUsernameChange
-    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
