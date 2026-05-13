@@ -14,6 +14,9 @@ export default function DashboardPage() {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [newName, setNewName] = useState(user.name || '');
+  const [isChangingName, setIsChangingName] = useState(false);
+  const setUser = useStore(state => state.setUser);
 
   useEffect(() => {
     async function loadData() {
@@ -55,6 +58,22 @@ export default function DashboardPage() {
       alert(err.response?.data?.message || "Failed to change password.");
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleChangeName = async (e) => {
+    e.preventDefault();
+    if (newName.trim() === user.name) return;
+    try {
+      setIsChangingName(true);
+      const res = await db.changeName(newName);
+      alert(res.message);
+      // Update local store so UI reflects it immediately
+      setUser({ ...user, name: res.name, lastUsernameChange: res.lastUsernameChange });
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to change name.");
+    } finally {
+      setIsChangingName(false);
     }
   };
 
@@ -285,21 +304,55 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="glass-card" style={{ padding: '32px', marginTop: '32px' }}>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Security</h2>
-        <form onSubmit={handleChangePassword} style={{ maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Current Password</label>
-            <input type="password" required className="input-field" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="••••••••" style={{ width: '100%' }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '32px' }}>
+        <div className="glass-card" style={{ padding: '32px' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Profile Settings</h2>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Permanent User ID</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input type="text" readOnly className="input-field" value={user.uniqueId || 'Not Assigned Yet'} style={{ width: '100%', background: 'rgba(0,0,0,0.2)', color: 'var(--text-muted)' }} />
+              {user.uniqueId && (
+                <button 
+                  onClick={() => { navigator.clipboard.writeText(user.uniqueId); alert('Copied to clipboard!'); }}
+                  className="btn btn-outline"
+                  title="Copy ID"
+                >
+                  Copy
+                </button>
+              )}
+            </div>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>This ID is permanent and cannot be changed. Share this with support if needed.</p>
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>New Password</label>
-            <input type="password" required minLength="6" className="input-field" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password (min 6 chars)" style={{ width: '100%' }} />
-          </div>
-          <button type="submit" className="btn btn-primary" disabled={isChangingPassword} style={{ marginTop: '8px' }}>
-            {isChangingPassword ? 'Updating...' : 'Change Password'}
-          </button>
-        </form>
+
+          <form onSubmit={handleChangeName} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Display Name</label>
+              <input type="text" required minLength="3" maxLength="30" className="input-field" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Your Name" style={{ width: '100%' }} />
+              <p style={{ fontSize: '0.75rem', color: 'var(--warning)', marginTop: '6px' }}>Note: You can only change your name once every 7 days.</p>
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={isChangingName || newName.trim() === user.name} style={{ alignSelf: 'flex-start' }}>
+              {isChangingName ? 'Updating...' : 'Update Name'}
+            </button>
+          </form>
+        </div>
+
+        <div className="glass-card" style={{ padding: '32px' }}>
+          <h2 style={{ fontSize: '1.5rem', marginBottom: '24px' }}>Security</h2>
+          <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>Current Password</label>
+              <input type="password" required className="input-field" value={oldPassword} onChange={e => setOldPassword(e.target.value)} placeholder="••••••••" style={{ width: '100%' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--text-secondary)' }}>New Password</label>
+              <input type="password" required minLength="6" className="input-field" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="New Password (min 6 chars)" style={{ width: '100%' }} />
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={isChangingPassword} style={{ alignSelf: 'flex-start', marginTop: '8px' }}>
+              {isChangingPassword ? 'Updating...' : 'Change Password'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
