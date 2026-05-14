@@ -133,6 +133,70 @@ function isAbbreviationMistake(orig, typed) {
 }
 
 // -------------------------------------------------------
+// EVALUATE WORD PAIR (DP HELPER)
+// -------------------------------------------------------
+function evaluateWordPair(oW, tW, r, origIndex) {
+  const oClean = stripPunct(oW).toLowerCase();
+  const tClean = stripPunct(tW).toLowerCase();
+
+  if (oW === tW) return { cost: 0, data: { word: tW, type: 'correct', original: oW } };
+
+  if (isAcceptedAlternate(oClean, tClean)) return { cost: 0, data: { word: tW, type: 'correct', original: oW, note: 'alternate_spelling' } };
+
+  if (oClean === tClean) {
+    const isCaseDiff = oW !== tW;
+    const oHasStop = hasFullStop(oW);
+    const tHasStop = hasFullStop(tW);
+
+    if (oHasStop !== tHasStop) {
+      if (r.punctRule !== 'Ignore') {
+        const cls = r.punctRule === 'Full Mistake' ? 'full' : 'half';
+        const cost = cls === 'full' ? 1 : 0.5;
+        return { cost, data: { word: tW, original: oW, type: 'punctuation', mistakeClass: cls } };
+      } else {
+        return { cost: 0, data: { word: tW, original: oW, type: 'correct' } };
+      }
+    }
+
+    if (isCaseDiff) {
+      const isProperNoun = /^[A-Z]/.test(oW) && !/^[A-Z]{2,}$/.test(oW);
+      const isFirstWord = origIndex === 0;
+
+      if (r.capRule !== 'Ignore') {
+        const cls = r.capRule === 'Full Mistake' ? 'full' : 'half';
+        const cost = cls === 'full' ? 1 : 0.5;
+        // Apply mistake only if proper noun or first word OR cap rule strictly applies to all case differences
+        // The original logic punished all case differences according to cap rule unless it was Ignore.
+        return { cost, data: { word: tW, original: oW, type: 'capitalization', mistakeClass: cls } };
+      } else {
+        return { cost: 0, data: { word: tW, original: oW, type: 'correct' } };
+      }
+    }
+    return { cost: 0, data: { word: tW, original: oW, type: 'correct' } };
+  }
+
+  if (isSingularPluralVariant(oClean, tClean)) {
+    return { cost: 0.5, data: { word: tW, original: oW, type: 'singular_plural', mistakeClass: 'half' } };
+  }
+
+  if (Math.abs(oClean.length - tClean.length) <= 2) {
+    const dist = levenshtein(oClean, tClean);
+    const maxLen = Math.max(oClean.length, tClean.length);
+    if (dist <= 2 && maxLen >= 3 && (dist / maxLen) <= 0.4 && !isAbbreviationMistake(oClean, tClean)) {
+      const cls = r.similarWordRule === 'Strict' ? 'full' : 'half';
+      const cost = cls === 'full' ? 1 : 0.5;
+      return { cost, data: { word: tW, original: oW, type: 'spelling', mistakeClass: cls } };
+    }
+  }
+
+  if (isAbbreviationMistake(oClean, tClean)) {
+    return { cost: 1, data: { word: tW, original: oW, type: 'abbreviation', mistakeClass: 'full' } };
+  }
+
+  return { cost: 1, data: { word: tW, original: oW, type: 'substitution_extra', mistakeClass: 'full', note: 'substitution_extra' } };
+}
+
+// -------------------------------------------------------
 // MAIN SSC ENGINE
 // -------------------------------------------------------
 export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rules) {
@@ -160,8 +224,6 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
   let half = 0; // integer count of half mistakes (each = 0.5 error unit)
   let resultHtmlArray = [];
 
-  let i = 0, j = 0;
-
   // Add a full mistake helper (respects fullMistakeAllowed flag)
   const addFull = (delta = 1) => { if (r.fullMistakeAllowed) full += delta; };
   // Add a half mistake helper (respects halfMistakeAllowed flag)
@@ -173,186 +235,116 @@ export function analyzeTestResult(originalText, typedText, timeTakenMinutes, rul
   }
 
   // -------------------------------------------------------
-  // WORD-BY-WORD COMPARISON using two-pointer alignment
+  // DYNAMIC PROGRAMMING SEQUENCE ALIGNMENT (Wagner-Fischer)
   // -------------------------------------------------------
-  while (i < origWords.length && j < typedWords.length) {
-    const oW  = origWords[i];
-    const tW  = typedWords[j];
+  const N = origWords.length;
+  const M = typedWords.length;
 
-    const oClean = stripPunct(oW).toLowerCase();
-    const tClean = stripPunct(tW).toLowerCase();
+  // Use 1D typed arrays for a fast (N+1) x (M+1) matrix
+  const dp = new Float64Array((N + 1) * (M + 1));
+  const back = new Uint8Array((N + 1) * (M + 1)); // 1: sub, 2: del, 3: ins
 
-    // ── 1. EXACT MATCH ──────────────────────────────────
-    if (oW === tW) {
-      resultHtmlArray.push({ word: tW, type: 'correct', original: oW });
-      i++; j++;
-      continue;
-    }
+  const idx = (i, j) => i * (M + 1) + j;
 
-    // ── 2. ACCEPTED ALTERNATE SPELLING (No penalty) ─────
-    if (isAcceptedAlternate(oClean, tClean)) {
-      resultHtmlArray.push({ word: tW, type: 'correct', original: oW, note: 'alternate_spelling' });
-      i++; j++;
-      continue;
-    }
+  // Base cases
+  for (let i = 1; i <= N; i++) {
+    dp[idx(i, 0)] = i; // i deletions (full mistakes)
+    back[idx(i, 0)] = 2; // del
+  }
+  for (let j = 1; j <= M; j++) {
+    dp[idx(0, j)] = j; // j insertions (full mistakes)
+    back[idx(0, j)] = 3; // ins
+  }
 
-    // ── 3. SAME BASE (differ only in punctuation/case) ──
-    const sameBase = oClean === tClean;
-    if (sameBase) {
-      // oW !== tW already confirmed (step 1 exact match didn't pass)
-      // Since same base letters, any difference must be case or punctuation
-      const isCaseDiff = oW !== tW;  // FIX: was toLowerCase comparison — wrong for "He" vs "HE"
-      const isPunctDiff = !isCaseDiff && oClean === tClean;
+  // DP computation
+  for (let i = 1; i <= N; i++) {
+    for (let j = 1; j <= M; j++) {
+      const oW = origWords[i - 1];
+      const tW = typedWords[j - 1];
 
-      // Check: missing/wrong full stop → half mistake
-      const oHasStop = hasFullStop(oW);
-      const tHasStop = hasFullStop(tW);
-      const fullStopMissing = oHasStop && !tHasStop;
-      const fullStopExtra   = !oHasStop && tHasStop;
+      // Fast inline cost estimation
+      let subCost = 1; // default full mistake
 
-      if (fullStopMissing || fullStopExtra) {
-        if (r.punctRule !== 'Ignore') {
-          if (r.punctRule === 'Full Mistake') { addFull(); }
-          else { addHalf(); }
-          resultHtmlArray.push({ word: tW, original: oW, type: 'punctuation', mistakeClass: 'half' });
+      const oClean = stripPunct(oW).toLowerCase();
+      const tClean = stripPunct(tW).toLowerCase();
+
+      if (oW === tW) {
+        subCost = 0;
+      } else if (isAcceptedAlternate(oClean, tClean)) {
+        subCost = 0;
+      } else if (oClean === tClean) {
+        // Same letters, different case or punctuation
+        const isCaseDiff = oW !== tW;
+        const oHasStop = hasFullStop(oW);
+        const tHasStop = hasFullStop(tW);
+
+        if (oHasStop !== tHasStop) {
+          subCost = r.punctRule === 'Ignore' ? 0 : (r.punctRule === 'Full Mistake' ? 1 : 0.5);
+        } else if (isCaseDiff) {
+          subCost = r.capRule === 'Ignore' ? 0 : (r.capRule === 'Full Mistake' ? 1 : 0.5);
         } else {
-          resultHtmlArray.push({ word: tW, original: oW, type: 'correct' });
+          subCost = 0;
         }
-        i++; j++;
-        continue;
-      }
-
-      if (isCaseDiff) {
-        // Check: is original a proper noun (starts with capital)?
-        const isProperNoun = /^[A-Z]/.test(oW) && !/^[A-Z]{2,}$/.test(oW);
-        // Check: small letter at start of sentence (first word)
-        const isFirstWord = i === 0;
-
-        if (r.capRule !== 'Ignore') {
-          if (isProperNoun || isFirstWord) {
-            // HALF mistake for not capitalizing proper noun / first letter of sentence
-            if (r.capRule === 'Full Mistake') { addFull(); }
-            else { addHalf(); }
-            resultHtmlArray.push({ word: tW, original: oW, type: 'capitalization', mistakeClass: r.capRule === 'Full Mistake' ? 'full' : 'half' });
-          } else {
-            // Normal case difference → follow capRule
-            if (r.capRule === 'Full Mistake') { addFull(); }
-            else { addHalf(); }
-            resultHtmlArray.push({ word: tW, original: oW, type: 'capitalization', mistakeClass: r.capRule === 'Full Mistake' ? 'full' : 'half' });
+      } else if (isSingularPluralVariant(oClean, tClean)) {
+        subCost = 0.5;
+      } else if (Math.abs(oClean.length - tClean.length) <= 2) {
+        const maxLen = Math.max(oClean.length, tClean.length);
+        if (maxLen >= 3) {
+          const dist = levenshtein(oClean, tClean);
+          if (dist <= 2 && (dist / maxLen) <= 0.4 && !isAbbreviationMistake(oClean, tClean)) {
+            subCost = r.similarWordRule === 'Strict' ? 1 : 0.5;
           }
-        } else {
-          resultHtmlArray.push({ word: tW, original: oW, type: 'correct' });
-        }
-        i++; j++;
-        continue;
-      }
-
-      // Only punctuation diff and punctRule is ignore
-      resultHtmlArray.push({ word: tW, original: oW, type: 'correct' });
-      i++; j++;
-      continue;
-    }
-
-    // ── 4. SINGULAR ↔ PLURAL VARIANT → half mistake ────
-    if (isSingularPluralVariant(oClean, tClean)) {
-      addHalf();
-      resultHtmlArray.push({ word: tW, original: oW, type: 'singular_plural', mistakeClass: 'half' });
-      i++; j++;
-      continue;
-    }
-
-    // ── 5. SPELLING MISTAKE (close match) → half mistake ─
-    //    Levenshtein ≤ 2 and word is long enough to not be unrelated
-    const dist = levenshtein(oClean, tClean);
-    const maxLen = Math.max(oClean.length, tClean.length);
-    const isSpellClose = dist <= 2 && maxLen >= 3 && (dist / maxLen) <= 0.4;
-
-    if (isSpellClose && !isAbbreviationMistake(oClean, tClean)) {
-      if (r.similarWordRule === 'Strict') { addFull(); }
-      else { addHalf(); }
-      const cls = r.similarWordRule === 'Strict' ? 'full' : 'half';
-      resultHtmlArray.push({ word: tW, original: oW, type: 'spelling', mistakeClass: cls });
-      i++; j++;
-      continue;
-    }
-
-    // ── 6. OMISSION — next typed word matches current orig ──
-    //    Means user skipped oRaw[i]
-    const lookahead = 2; // look 1-2 orig words ahead
-    let omissionFound = false;
-    for (let skip = 1; skip <= lookahead; skip++) {
-      if (i + skip < origWords.length) {
-        const nextOrig = stripPunct(origWords[i + skip]).toLowerCase();
-        if (nextOrig === tClean) {
-          // Mark each skipped original word as omission
-          for (let s = 0; s < skip; s++) {
-            addFull();
-            resultHtmlArray.push({ word: origWords[i + s], original: origWords[i + s], type: 'missing', mistakeClass: 'full' });
-          }
-          i += skip;
-          omissionFound = true;
-          break;
         }
       }
-    }
-    if (omissionFound) continue;
 
-    // ── 7. ADDITION — next orig word matches current typed ──
-    //    Means user added an extra word
-    const lookaheadT = 2;
-    let additionFound = false;
-    for (let skip = 1; skip <= lookaheadT; skip++) {
-      if (j + skip < typedWords.length) {
-        const nextTyped = stripPunct(typedWords[j + skip]).toLowerCase();
-        if (nextTyped === oClean) {
-          for (let s = 0; s < skip; s++) {
-            addFull();
-            resultHtmlArray.push({ word: typedWords[j + s], original: '', type: 'extra', mistakeClass: 'full' });
-          }
-          j += skip;
-          additionFound = true;
-          break;
-        }
+      const costSub = dp[idx(i - 1, j - 1)] + subCost;
+      const costDel = dp[idx(i - 1, j)] + 1; // 1 full mistake
+      const costIns = dp[idx(i, j - 1)] + 1; // 1 full mistake
+
+      let minCost = costSub;
+      let action = 1; // sub
+
+      if (costDel < minCost) { minCost = costDel; action = 2; }
+      if (costIns < minCost) { minCost = costIns; action = 3; }
+
+      dp[idx(i, j)] = minCost;
+      back[idx(i, j)] = action;
+    }
+  }
+
+  // -------------------------------------------------------
+  // BACKTRACKING PATH RECONSTRUCTION
+  // -------------------------------------------------------
+  let i = N;
+  let j = M;
+  const path = [];
+
+  while (i > 0 || j > 0) {
+    const action = back[idx(i, j)];
+
+    if (action === 1) { // Substitution / Match
+      const evalData = evaluateWordPair(origWords[i - 1], typedWords[j - 1], r, i - 1);
+      path.push(evalData.data);
+
+      if (evalData.cost === 1 && evalData.data.mistakeClass === 'full') {
+        addFull();
+      } else if (evalData.cost === 0.5 || evalData.data.mistakeClass === 'half') {
+        addHalf();
       }
-    }
-    if (additionFound) continue;
-
-    // ── 8. REPETITION CHECK — typed same word twice ─────
-    if (j > 0 && tClean === stripPunct(typedWords[j - 1]).toLowerCase()) {
+      i--; j--;
+    } else if (action === 2) { // Deletion (Missing word)
       addFull();
-      resultHtmlArray.push({ word: tW, original: oW, type: 'repetition', mistakeClass: 'full' });
-      j++; // skip the repeated typed word, do NOT advance orig
-      continue;
-    }
-
-    // ── 9. ABBREVIATION MISTAKE ─────────────────────────
-    if (isAbbreviationMistake(oClean, tClean)) {
+      path.push({ word: origWords[i - 1], original: origWords[i - 1], type: 'missing', mistakeClass: 'full' });
+      i--;
+    } else if (action === 3) { // Insertion (Extra word)
       addFull();
-      resultHtmlArray.push({ word: tW, original: oW, type: 'abbreviation', mistakeClass: 'full' });
-      i++; j++;
-      continue;
+      path.push({ word: typedWords[j - 1], original: '', type: 'extra', mistakeClass: 'full' });
+      j--;
     }
-
-    // ── 10. SUBSTITUTION (completely different word) ─────
-    // 1 Full mistake: the correct word was replaced by a wrong word
-    addFull();
-    resultHtmlArray.push({ word: tW, original: oW, type: 'substitution_extra', mistakeClass: 'full', note: 'substitution_extra' });
-    i++; j++;
   }
 
-  // ── REMAINING ORIGINAL WORDS → omissions (full mistake each) ──
-  while (i < origWords.length) {
-    addFull();
-    resultHtmlArray.push({ word: origWords[i], original: origWords[i], type: 'missing', mistakeClass: 'full' });
-    i++;
-  }
-
-  // ── REMAINING TYPED WORDS → leftover additions (full mistake each) ──
-  while (j < typedWords.length) {
-    addFull();
-    resultHtmlArray.push({ word: typedWords[j], original: '', type: 'extra', mistakeClass: 'full' });
-    j++;
-  }
+  // The path was reconstructed from end to start, so reverse it
+  resultHtmlArray = path.reverse();
 
   // -------------------------------------------------------
   // SSC FORMULA:
