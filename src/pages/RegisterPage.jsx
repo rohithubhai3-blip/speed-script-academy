@@ -24,7 +24,7 @@ export default function RegisterPage() {
       login(user);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'An error occurred during registration');
     } finally {
       setLoading(false);
     }

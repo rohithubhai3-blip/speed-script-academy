@@ -22,7 +22,7 @@ export default function LoginPage() {
       login(user);
       navigate(user.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'An error occurred during login');
     } finally {
       setLoading(false);
     }
