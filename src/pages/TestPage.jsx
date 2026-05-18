@@ -146,10 +146,10 @@ export default function TestPage() {
     return () => clearInterval(interval);
   }, [status, countdown]);
 
-  // Playback Rate Effect — Rule: 60 WPM recorded = 1.00x baseline for all courses
+  // Playback Rate Effect — Rule: 80 WPM recorded = 1.00x baseline for all courses
   useEffect(() => {
     if (mediaRef.current && lesson) {
-      const rate = targetWpm / 60;
+      const rate = targetWpm / 80;
       mediaRef.current.playbackRate = rate;
     }
   }, [targetWpm, lesson]);
@@ -172,7 +172,7 @@ export default function TestPage() {
 
   const handleStartListening = () => {
     if (mediaRef.current) {
-      mediaRef.current.playbackRate = targetWpm / 60;
+      mediaRef.current.playbackRate = targetWpm / 80;
     }
   };
 
