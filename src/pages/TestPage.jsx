@@ -146,13 +146,16 @@ export default function TestPage() {
     return () => clearInterval(interval);
   }, [status, countdown]);
 
-  // Playback Rate Effect — Rule: 80 WPM recorded = 1.00x baseline for all courses
+  // Playback Rate Effect — uses lesson's own baseWpm (e.g. 60 or 80)
+  // Formula: playbackRate = targetWpm / baseWpm
+  // Old recordings (60 WPM base) → targetWpm/60
+  // New recordings (80 WPM base) → targetWpm/80
   useEffect(() => {
     if (mediaRef.current && lesson) {
-      const rate = targetWpm / 80;
+      const rate = targetWpm / baseWpm;
       mediaRef.current.playbackRate = rate;
     }
-  }, [targetWpm, lesson]);
+  }, [targetWpm, lesson, baseWpm]);
 
   // Anti-cheat visibility listener
   useEffect(() => {
@@ -172,7 +175,7 @@ export default function TestPage() {
 
   const handleStartListening = () => {
     if (mediaRef.current) {
-      mediaRef.current.playbackRate = targetWpm / 80;
+      mediaRef.current.playbackRate = targetWpm / baseWpm;
     }
   };
 
